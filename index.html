@@ -1,0 +1,180 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>phanh_calender_t8 — Live</title>
+<style>
+  :root{
+    --bg-top:#F4F8EE; --bg-bot:#E3F0DC; --ink:#22331B; --ink-soft:#5B6E52;
+    --leaf-dark:#2E5E2E; --leaf:#4C7A3D; --leaf-light:#8FBF6B; --leaf-pale:#C9E4B8;
+    --card-bg:#FFFFFF; --line:#DCE8D2;
+    --done-grad: linear-gradient(135deg,#8FBF6B,#4C7A3D);
+  }
+  *{box-sizing:border-box;}
+  body{margin:0;font-family:-apple-system,"Segoe UI",Roboto,sans-serif;
+    background:linear-gradient(180deg,var(--bg-top),var(--bg-bot) 60%, #D8ECD0 100%);
+    color:var(--ink);min-height:100vh;padding:0 0 60px;}
+  .wrap{max-width:760px;margin:0 auto;padding:28px 18px;}
+  header{text-align:center;margin-bottom:18px;}
+  .eyebrow{font-size:12px;letter-spacing:.14em;text-transform:uppercase;color:var(--leaf-dark);font-weight:700;}
+  h1{font-size:24px;margin:6px 0 2px;font-weight:800;}
+  .sub{color:var(--ink-soft);font-size:13px;}
+
+  .setup{
+    background:#FFF7E6;border:1px solid #E9CE8C;border-radius:14px;
+    padding:14px 16px;font-size:13px;margin-bottom:18px;display:none;
+  }
+  .setup.show{display:block;}
+  .setup input{width:100%;padding:8px 10px;border-radius:8px;border:1px solid #ddd;margin-top:6px;font-size:13px;}
+  .setup button{margin-top:10px;background:var(--leaf-dark);color:#fff;border:none;padding:8px 16px;border-radius:8px;cursor:pointer;font-weight:700;}
+
+  section{background:var(--card-bg);border-radius:16px;padding:16px;margin-bottom:16px;box-shadow:0 2px 10px rgba(34,51,27,.06);}
+  section h2{font-size:15px;margin:0 0 10px;display:flex;align-items:center;justify-content:space-between;}
+  .refresh{font-size:11px;color:var(--leaf);cursor:pointer;font-weight:700;}
+  .item{display:flex;gap:10px;align-items:flex-start;padding:9px 2px;border-bottom:1px dashed var(--line);}
+  .item:last-child{border-bottom:none;}
+  .item input[type=checkbox]{appearance:none;width:20px;height:20px;border-radius:6px;border:2px solid var(--leaf-light);
+    margin-top:2px;flex:0 0 20px;cursor:pointer;position:relative;background:#fff;}
+  .item input[type=checkbox]:checked{background:var(--done-grad);border-color:transparent;}
+  .item input[type=checkbox]:checked::after{content:"";position:absolute;left:6px;top:2px;width:5px;height:10px;
+    border:solid white;border-width:0 2px 2px 0;transform:rotate(40deg);}
+  .item-name{font-size:14px;font-weight:600;}
+  .item-name.done{color:var(--ink-soft);text-decoration:line-through;text-decoration-color:var(--leaf-light);}
+  .item-time{font-size:11px;color:var(--ink-soft);}
+  .empty{font-size:13px;color:var(--ink-soft);padding:10px 2px;}
+  .status-line{font-size:12px;color:var(--ink-soft);text-align:center;margin-top:10px;}
+  .status-line.err{color:#B23A3A;}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <div class="eyebrow">Sprint VSTEP · Live</div>
+    <h1>phanh_calender_t8</h1>
+    <div class="sub">Tick ở đây sẽ tự cập nhật thẳng vào Notion &amp; Google Calendar</div>
+  </header>
+
+  <div class="setup" id="setupBox">
+    <div><b>Cần kết nối tới Worker trước khi dùng:</b></div>
+    <label>Worker URL (vd: https://phanh-dashboard.yourname.workers.dev)</label>
+    <input id="workerUrl" placeholder="https://...workers.dev">
+    <label>Dash Key (đặt trong Worker secrets)</label>
+    <input id="dashKey" placeholder="dán DASH_KEY vào đây">
+    <button onclick="saveConfig()">Lưu &amp; kết nối</button>
+  </div>
+
+  <section>
+    <h2>📋 Việc hôm nay (Notion) <span class="refresh" onclick="loadTasks()">↻ làm mới</span></h2>
+    <div id="taskList"></div>
+  </section>
+
+  <section>
+    <h2>📅 Lịch hôm nay (Google Calendar) <span class="refresh" onclick="loadEvents()">↻ làm mới</span></h2>
+    <div id="eventList"></div>
+  </section>
+
+  <div class="status-line" id="statusLine"></div>
+</div>
+
+<script>
+let CONFIG = { url: '', key: '' };
+
+function loadConfig(){
+  try{
+    const saved = JSON.parse(sessionStorage.getItem('dashConfig') || '{}');
+    CONFIG = saved;
+  }catch(e){}
+  if(!CONFIG.url || !CONFIG.key){
+    document.getElementById('setupBox').classList.add('show');
+  } else {
+    loadTasks(); loadEvents();
+  }
+}
+
+function saveConfig(){
+  CONFIG.url = document.getElementById('workerUrl').value.trim().replace(/\/$/,'');
+  CONFIG.key = document.getElementById('dashKey').value.trim();
+  sessionStorage.setItem('dashConfig', JSON.stringify(CONFIG));
+  document.getElementById('setupBox').classList.remove('show');
+  loadTasks(); loadEvents();
+}
+
+function setStatus(msg, isErr){
+  const el = document.getElementById('statusLine');
+  el.textContent = msg;
+  el.className = 'status-line' + (isErr ? ' err' : '');
+}
+
+async function api(path, opts={}){
+  const res = await fetch(CONFIG.url + path, {
+    ...opts,
+    headers: { 'Content-Type':'application/json', 'X-Dash-Key': CONFIG.key, ...(opts.headers||{}) }
+  });
+  if(!res.ok) throw new Error('API lỗi ' + res.status);
+  return res.json();
+}
+
+async function loadTasks(){
+  setStatus('Đang tải việc từ Notion...');
+  try{
+    const { tasks } = await api('/api/tasks');
+    const el = document.getElementById('taskList');
+    if(!tasks.length){ el.innerHTML = '<div class="empty">Không có task nào.</div>'; return; }
+    el.innerHTML = tasks.map(t => `
+      <div class="item">
+        <input type="checkbox" ${t.status==='Done'?'checked':''} onchange="toggleTask('${t.id}', this.checked)">
+        <div>
+          <div class="item-name ${t.status==='Done'?'done':''}">${t.name}</div>
+          <div class="item-time">${t.due || ''}</div>
+        </div>
+      </div>`).join('');
+    setStatus('Đã tải xong · ' + new Date().toLocaleTimeString('vi-VN'));
+  }catch(e){ setStatus('Lỗi tải Notion: ' + e.message, true); }
+}
+
+async function toggleTask(id, checked){
+  setStatus('Đang cập nhật Notion...');
+  try{
+    await api('/api/tasks/' + id, { method:'PATCH', body: JSON.stringify({ status: checked ? 'Done' : 'Not started' }) });
+    setStatus('Đã đồng bộ với Notion ✓');
+  }catch(e){ setStatus('Lỗi cập nhật Notion: ' + e.message, true); loadTasks(); }
+}
+
+async function loadEvents(){
+  setStatus('Đang tải lịch từ Google Calendar...');
+  try{
+    const { events } = await api('/api/events');
+    const el = document.getElementById('eventList');
+    if(!events.length){ el.innerHTML = '<div class="empty">Không có sự kiện hôm nay.</div>'; return; }
+    el.innerHTML = events.map(ev => `
+      <div class="item">
+        <input type="checkbox" ${ev.done?'checked':''} onchange="toggleEvent('${ev.id}', this.checked)">
+        <div>
+          <div class="item-name ${ev.done?'done':''}">${ev.title.replace(/^✅ /,'')}</div>
+          <div class="item-time">${fmtTime(ev.start)} – ${fmtTime(ev.end)}</div>
+        </div>
+      </div>`).join('');
+    setStatus('Đã tải xong · ' + new Date().toLocaleTimeString('vi-VN'));
+  }catch(e){ setStatus('Lỗi tải Calendar: ' + e.message, true); }
+}
+
+async function toggleEvent(id, checked){
+  setStatus('Đang cập nhật Calendar...');
+  try{
+    await api('/api/events/' + id, { method:'PATCH', body: JSON.stringify({ done: checked }) });
+    setStatus('Đã đồng bộ với Google Calendar ✓');
+  }catch(e){ setStatus('Lỗi cập nhật Calendar: ' + e.message, true); loadEvents(); }
+}
+
+function fmtTime(iso){
+  if(!iso) return '';
+  if(iso.length <= 10) return 'Cả ngày';
+  const d = new Date(iso);
+  return d.toLocaleTimeString('vi-VN', { hour:'2-digit', minute:'2-digit' });
+}
+
+loadConfig();
+</script>
+</body>
+</html>
