@@ -195,12 +195,43 @@ function changeMonth(delta){
   loadMonthData();
 }
 
+function normalizeName(s){
+  return s
+    .replace(/^\[[^\]]*\]\s*/,'')      // bỏ tiền tố dạng [Ngữ pháp], [Kênh]...
+    .replace(/\s*\([^)]*\)\s*$/,'')     // bỏ hậu tố giờ giấc dạng (16h-16h30)
+    .trim()
+    .toLowerCase();
+}
+
 function itemsForDay(dateStr){
-  const t = ALL_TASKS.filter(x => dateKey(x.due) === dateStr)
-    .map(x => ({ id:x.id, name:x.name, done:x.status==='Done', time:'', source:'notion' }));
-  const e = ALL_EVENTS.filter(x => dateKey(x.start) === dateStr)
-    .map(x => ({ id:x.id, name:x.title.replace(/^✅ /,''), done:x.done, time:fmtTime(x.start), source:'gcal' }));
-  return [...t, ...e].sort((a,b)=> (a.time||'').localeCompare(b.time||''));
+  const tasks = ALL_TASKS.filter(x => dateKey(x.due) === dateStr);
+  const events = ALL_EVENTS.filter(x => dateKey(x.start) === dateStr);
+
+  const usedEventIds = new Set();
+  const merged = [];
+
+  tasks.forEach(t => {
+    const norm = normalizeName(t.name);
+    const match = events.find(e => !usedEventIds.has(e.id) && normalizeName(e.title.replace(/^✅ /,'')) === norm);
+    if(match){
+      usedEventIds.add(match.id);
+      merged.push({
+        id: t.id, eventId: match.id,
+        name: match.title.replace(/^✅ /,''),
+        done: (t.status==='Done') || match.done,
+        time: fmtTime(match.start),
+        source: 'both'
+      });
+    } else {
+      merged.push({ id:t.id, name:t.name, done:t.status==='Done', time:'', source:'notion' });
+    }
+  });
+
+  events.filter(e => !usedEventIds.has(e.id)).forEach(e => {
+    merged.push({ id:e.id, name:e.title.replace(/^✅ /,''), done:e.done, time:fmtTime(e.start), source:'gcal' });
+  });
+
+  return merged.sort((a,b)=> (a.time||'').localeCompare(b.time||''));
 }
 function fmtTime(iso){
   if(!iso) return '';
@@ -276,26 +307,33 @@ function renderSheetBody(dateStr){
   const items = itemsForDay(dateStr);
   const body = document.getElementById('sheetBody');
   if(!items.length){ body.innerHTML = '<div class="empty">Không có việc nào trong ngày này.</div>'; return; }
-  body.innerHTML = items.map(it => `
+  body.innerHTML = items.map(it => {
+    const tag = it.source==='notion' ? '<span class="src-tag notion">Notion</span>'
+      : it.source==='gcal' ? '<span class="src-tag gcal">Calendar</span>'
+      : '<span class="src-tag notion">Notion</span><span class="src-tag gcal">Calendar</span>';
+    return `
     <div class="item">
-      <input type="checkbox" ${it.done?'checked':''} onchange="toggleItem('${it.source}','${it.id}', this.checked, '${dateStr}')">
+      <input type="checkbox" ${it.done?'checked':''} onchange="toggleItem('${it.source}','${it.id}', this.checked, '${dateStr}', '${it.eventId||''}')">
       <div>
-        <div class="item-name ${it.done?'done':''}">${it.name}<span class="src-tag ${it.source}">${it.source==='notion'?'Notion':'Calendar'}</span></div>
+        <div class="item-name ${it.done?'done':''}">${it.name}${tag}</div>
         <div class="item-time">${it.time}</div>
       </div>
-    </div>`).join('');
+    </div>`;
+  }).join('');
 }
 
-async function toggleItem(source, id, checked, dateStr){
+async function toggleItem(source, id, checked, dateStr, eventId){
   setStatus('Đang đồng bộ...');
   try{
-    if(source === 'notion'){
+    if(source === 'notion' || source === 'both'){
       await api('/api/tasks/' + id, { method:'PATCH', body: JSON.stringify({ status: checked?'Done':'Not started' }) });
-    } else {
-      await api('/api/events/' + id, { method:'PATCH', body: JSON.stringify({ done: checked }) });
+      const t = ALL_TASKS.find(x=>x.id===id); if(t) t.status = checked?'Done':'Not started';
     }
-    if(source==='notion'){ const t = ALL_TASKS.find(x=>x.id===id); if(t) t.status = checked?'Done':'Not started'; }
-    else { const e = ALL_EVENTS.find(x=>x.id===id); if(e) e.done = checked; }
+    if(source === 'gcal' || source === 'both'){
+      const targetId = source==='both' ? eventId : id;
+      await api('/api/events/' + targetId, { method:'PATCH', body: JSON.stringify({ done: checked }) });
+      const e = ALL_EVENTS.find(x=>x.id===targetId); if(e) e.done = checked;
+    }
     renderSheetBody(dateStr);
     renderCalendar();
     renderStats();
