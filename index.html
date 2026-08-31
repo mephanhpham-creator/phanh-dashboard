@@ -207,10 +207,36 @@ async function loadMonthData(){
   try{
     const { tasks } = await api('/api/tasks');
     ALL_TASKS = tasks;
+    try{
+      const start = new Date(viewYear, viewMonth, 1);
+      const end = new Date(viewYear, viewMonth + 1, 0, 23, 59, 59);
+      const { events } = await api('/api/events?start=' + start.toISOString() + '&end=' + end.toISOString());
+      ALL_EVENTS = events; // chỉ dùng để lấy giờ hiển thị, KHÔNG dùng để tính done
+    }catch(e){ ALL_EVENTS = []; } // Calendar lỗi thì vẫn hiện task Notion bình thường, chỉ thiếu giờ
     renderCalendar();
     renderStats();
     setStatus('Đã tải xong · ' + new Date().toLocaleTimeString('vi-VN'));
   }catch(e){ setStatus('Lỗi tải dữ liệu: ' + e.message, true); }
+}
+
+function normalizeName(s){
+  return s
+    .replace(/^\[[^\]]*\]\s*/,'')
+    .replace(/\s*\([^)]*\)\s*$/,'')
+    .trim()
+    .toLowerCase();
+}
+function coreMatch(a, b){
+  if(!a || !b) return false;
+  if(a === b) return true;
+  return a.endsWith(b) || b.endsWith(a) || a.includes(' '+b) || b.includes(' '+a);
+}
+// Tìm giờ hiển thị cho 1 task Notion bằng cách dò tên trùng trong sự kiện Calendar cùng ngày (chỉ để hiển thị)
+function findTimeForTask(taskName, dateStr){
+  const norm = normalizeName(taskName);
+  const dayEvents = ALL_EVENTS.filter(e => dateKey(e.start) === dateStr);
+  const match = dayEvents.find(e => coreMatch(normalizeName(e.title.replace(/^✅ /,'')), norm));
+  return match ? fmtTime(match.start) : '';
 }
 
 function changeMonth(delta){
@@ -225,22 +251,25 @@ function extractTag(name){
   return m ? m[1] : 'Khác';
 }
 
-// Mốc nền = 0 vì học lại từ đầu. "unitsPerDone" = số unit coi như hoàn thành mỗi lần
-// 1 task liên quan được tick Done trong lịch — đây là ƯỚC TÍNH dựa trên lịch đã tạo,
-// không phải số đọc trực tiếp từ Prep (dashboard chưa kết nối được Prep app).
+// Mốc nền = 0 vì học lại từ đầu. Số unit hoàn thành mỗi lần tick Done = số ghi RÕ trong tên task
+// (vd "– 2 units"); nếu tên task không ghi số cụ thể, mặc định tính là 1 (không đoán thêm).
+function parseUnitsFromName(name){
+  const m = name.match(/(\d+)\s*units?/i);
+  return m ? parseInt(m[1], 10) : 1;
+}
+
 const COURSE_CATALOG = {
   IELTS: [
-    { label:'Ngữ pháp Cơ Bản Plus', total:38, base:0, unitsPerDone:2, match:t=>extractTag(t.name)==='Ngữ pháp' },
-    { label:'Từ Vựng Cơ Bản Plus',  total:22, base:0, unitsPerDone:1, match:t=>extractTag(t.name)==='Từ vựng' },
-    { label:'IELTS Reading Cơ bản', total:10, base:0, unitsPerDone:4, match:t=>t.name.toLowerCase().includes('reading') },
-    { label:'IELTS Listening Cơ bản', total:9, base:0, unitsPerDone:4, match:t=>t.name.toLowerCase().includes('listening') },
-    { label:'IELTS Writing Cơ Bản Plus 2', total:26, base:0, unitsPerDone:2, match:t=>t.name.toLowerCase().includes('writing') },
-    { label:'IELTS Speaking Cơ bản Plus', total:24, base:0, unitsPerDone:2, match:t=>t.name.toLowerCase().includes('speaking') },
-    { label:'Phát âm Cơ Bản Plus', total:12, base:0, unitsPerDone:2, match:t=>t.name.includes('Phát âm') },
+    { label:'Ngữ pháp Cơ Bản Plus', total:38, base:0, match:t=>extractTag(t.name)==='Ngữ pháp' },
+    { label:'Từ Vựng Cơ Bản Plus',  total:22, base:0, match:t=>extractTag(t.name)==='Từ vựng' },
+    { label:'IELTS Reading Cơ bản', total:10, base:0, match:t=>t.name.toLowerCase().includes('reading') },
+    { label:'IELTS Listening Cơ bản', total:9, base:0, match:t=>t.name.toLowerCase().includes('listening') },
+    { label:'IELTS Writing Cơ Bản Plus 2', total:26, base:0, match:t=>t.name.toLowerCase().includes('writing') },
+    { label:'IELTS Speaking Cơ bản Plus', total:24, base:0, match:t=>t.name.toLowerCase().includes('speaking') },
+    { label:'Phát âm Cơ Bản Plus', total:12, base:0, match:t=>t.name.includes('Phát âm') },
   ],
   HSK: [
-    { label:'HSK 1 – Nền tảng tiếng Trung', total:56, base:0, unitsPerDone:4, match:t=>t.name.includes('Nền tảng') },
-    { label:'HSK – 52 bộ thủ cốt lõi', total:6, base:0, unitsPerDone:6, match:t=>t.name.includes('bộ thủ') },
+    { label:'HSK 1 – Nền tảng tiếng Trung', total:28, base:0, match:t=>extractTag(t.name)==='HSK' },
   ],
 };
 const FOLDER_ORDER = ['IELTS','HSK','AI Agent'];
@@ -253,8 +282,10 @@ function buildFolders(){
     const subs = {};
     let doneSum=0, totalSum=0;
     COURSE_CATALOG[folderName].forEach(c => {
-      const doneTasksCount = ALL_TASKS.filter(t => c.match(t) && t.status==='Done').length;
-      const done = Math.min(c.total, c.base + doneTasksCount * c.unitsPerDone);
+      const doneUnits = ALL_TASKS
+        .filter(t => c.match(t) && t.status==='Done')
+        .reduce((sum, t) => sum + parseUnitsFromName(t.name), 0);
+      const done = Math.min(c.total, c.base + doneUnits);
       subs[c.label] = { done, total:c.total };
       doneSum += done; totalSum += c.total;
     });
@@ -330,7 +361,8 @@ function normalizeName(s){
 function itemsForDay(dateStr){
   return ALL_TASKS
     .filter(x => dateKey(x.due) === dateStr)
-    .map(x => ({ id:x.id, name:x.name, done:x.status==='Done' }));
+    .map(x => ({ id:x.id, name:x.name, done:x.status==='Done', time: findTimeForTask(x.name, dateStr) }))
+    .sort((a,b)=> (a.time||'zz').localeCompare(b.time||'zz'));
 }
 function fmtTime(iso){
   if(!iso) return '';
@@ -359,7 +391,7 @@ function renderCalendar(){
 
     const MAX_SHOW = 3;
     const lines = items.slice(0, MAX_SHOW).map(it =>
-      `<div class="ev-line ${it.done?'done':''}">${it.done?'✓ ':''}${it.name}</div>`
+      `<div class="ev-line ${it.done?'done':''}">${it.done?'✓ ':''}${it.time?it.time+' ':''}${it.name}</div>`
     ).join('');
     const moreCount = items.length - MAX_SHOW;
     const moreLine = moreCount > 0 ? `<div class="ev-more">+${moreCount} khác</div>` : '';
@@ -404,6 +436,7 @@ function renderSheetBody(dateStr){
       <input type="checkbox" ${it.done?'checked':''} onchange="toggleItem('${it.id}', this.checked, '${dateStr}')">
       <div>
         <div class="item-name ${it.done?'done':''}">${it.name}</div>
+        ${it.time?`<div class="item-time">${it.time}</div>`:''}
       </div>
     </div>`).join('');
 }
