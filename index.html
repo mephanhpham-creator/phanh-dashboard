@@ -35,19 +35,21 @@
   .cal-nav{display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;padding:0 4px;}
   .cal-nav button{background:var(--leaf-pale);border:none;border-radius:8px;width:30px;height:30px;font-size:16px;cursor:pointer;color:var(--leaf-dark);font-weight:700;}
   .cal-nav .month-label{font-weight:800;font-size:15px;}
-  .cal-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:4px;}
+  .cal-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:3px;}
   .cal-dow{font-size:10px;text-align:center;color:var(--ink-soft);font-weight:700;padding-bottom:4px;}
-  .cal-day{aspect-ratio:1/1;border-radius:10px;background:#FAFCF7;border:1px solid var(--line);
-    display:flex;flex-direction:column;align-items:center;justify-content:flex-start;
-    padding:4px 2px;cursor:pointer;position:relative;font-size:12px;}
+  .cal-day{min-height:88px;border-radius:8px;background:#FAFCF7;border:1px solid var(--line);
+    display:flex;flex-direction:column;align-items:stretch;
+    padding:3px;cursor:pointer;position:relative;font-size:10px;overflow:hidden;}
   .cal-day.empty{background:transparent;border:none;cursor:default;}
   .cal-day.today{border:2px solid var(--leaf);}
   .cal-day.selected{background:var(--leaf-pale);}
-  .cal-day .num{font-weight:700;}
-  .cal-day .dots{display:flex;gap:2px;margin-top:3px;flex-wrap:wrap;justify-content:center;}
-  .dot{width:5px;height:5px;border-radius:50%;background:var(--leaf-light);}
-  .dot.done{background:var(--leaf-dark);opacity:.45;}
-  .cal-day .allDone{position:absolute;top:2px;right:3px;font-size:9px;}
+  .cal-day .num{font-weight:700;font-size:12px;text-align:right;padding:1px 2px;}
+  .cal-day .ev-line{
+    font-size:9px;line-height:1.3;padding:1px 3px;margin-top:1px;border-radius:3px;
+    background:var(--leaf-pale);color:var(--leaf-dark);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
+  }
+  .cal-day .ev-line.done{background:transparent;color:var(--ink-soft);text-decoration:line-through;text-decoration-color:var(--leaf-light);}
+  .cal-day .ev-more{font-size:9px;color:var(--ink-soft);padding:1px 3px;}
 
   .overlay{position:fixed;inset:0;background:rgba(34,51,27,.35);display:none;align-items:flex-end;justify-content:center;z-index:50;}
   .overlay.show{display:flex;}
@@ -205,10 +207,6 @@ async function loadMonthData(){
   try{
     const { tasks } = await api('/api/tasks');
     ALL_TASKS = tasks;
-    const start = new Date(viewYear, viewMonth, 1);
-    const end = new Date(viewYear, viewMonth + 1, 0, 23, 59, 59);
-    const { events } = await api('/api/events?start=' + start.toISOString() + '&end=' + end.toISOString());
-    ALL_EVENTS = events;
     renderCalendar();
     renderStats();
     setStatus('Đã tải xong · ' + new Date().toLocaleTimeString('vi-VN'));
@@ -227,34 +225,55 @@ function extractTag(name){
   return m ? m[1] : 'Khác';
 }
 
-// Tag trong ngoặc vuông -> thư mục môn học lớn
-const FOLDER_MAP = {
-  'Ngữ pháp':'IELTS', 'Writing':'IELTS', 'Speaking':'IELTS', 'Listening':'IELTS',
-  'Reading':'IELTS', 'IELTS':'IELTS', 'VSTEP':'IELTS', 'Từ vựng':'IELTS',
-  'HSK':'HSK',
-  'Lớp học':'AI Agent',
+// Mốc nền = 0 vì học lại từ đầu. "unitsPerDone" = số unit coi như hoàn thành mỗi lần
+// 1 task liên quan được tick Done trong lịch — đây là ƯỚC TÍNH dựa trên lịch đã tạo,
+// không phải số đọc trực tiếp từ Prep (dashboard chưa kết nối được Prep app).
+const COURSE_CATALOG = {
+  IELTS: [
+    { label:'Ngữ pháp Cơ Bản Plus', total:38, base:0, unitsPerDone:2, match:t=>extractTag(t.name)==='Ngữ pháp' },
+    { label:'Từ Vựng Cơ Bản Plus',  total:22, base:0, unitsPerDone:1, match:t=>extractTag(t.name)==='Từ vựng' },
+    { label:'IELTS Reading Cơ bản', total:10, base:0, unitsPerDone:4, match:t=>t.name.toLowerCase().includes('reading') },
+    { label:'IELTS Listening Cơ bản', total:9, base:0, unitsPerDone:4, match:t=>t.name.toLowerCase().includes('listening') },
+    { label:'IELTS Writing Cơ Bản Plus 2', total:26, base:0, unitsPerDone:2, match:t=>t.name.toLowerCase().includes('writing') },
+    { label:'IELTS Speaking Cơ bản Plus', total:24, base:0, unitsPerDone:2, match:t=>t.name.toLowerCase().includes('speaking') },
+    { label:'Phát âm Cơ Bản Plus', total:12, base:0, unitsPerDone:2, match:t=>t.name.includes('Phát âm') },
+  ],
+  HSK: [
+    { label:'HSK 1 – Nền tảng tiếng Trung', total:56, base:0, unitsPerDone:4, match:t=>t.name.includes('Nền tảng') },
+    { label:'HSK – 52 bộ thủ cốt lõi', total:6, base:0, unitsPerDone:6, match:t=>t.name.includes('bộ thủ') },
+  ],
 };
 const FOLDER_ORDER = ['IELTS','HSK','AI Agent'];
+const AI_AGENT_TOTAL_BUOI = 6;
 
 function buildFolders(){
-  const folders = {}; // folderName -> { done, total, subs: { subName: {done,total} } }
-  ALL_TASKS.forEach(t => {
-    const tag = extractTag(t.name);
-    const folderName = FOLDER_MAP[tag];
-    if(!folderName) return; // bỏ qua việc không thuộc nhóm học tập (Dạy, Kênh, Công việc...)
+  const folders = {};
 
-    if(!folders[folderName]) folders[folderName] = { done:0, total:0, subs:{} };
-    const f = folders[folderName];
-    f.total++; if(t.status==='Done') f.done++;
-
-    let subKey = tag;
-    if(folderName === 'AI Agent'){
-      const bm = t.name.match(/Buổi\s*\d+/i);
-      subKey = bm ? bm[0] : normalizeName(t.name);
-    }
-    if(!f.subs[subKey]) f.subs[subKey] = { done:0, total:0 };
-    f.subs[subKey].total++; if(t.status==='Done') f.subs[subKey].done++;
+  ['IELTS','HSK'].forEach(folderName => {
+    const subs = {};
+    let doneSum=0, totalSum=0;
+    COURSE_CATALOG[folderName].forEach(c => {
+      const doneTasksCount = ALL_TASKS.filter(t => c.match(t) && t.status==='Done').length;
+      const done = Math.min(c.total, c.base + doneTasksCount * c.unitsPerDone);
+      subs[c.label] = { done, total:c.total };
+      doneSum += done; totalSum += c.total;
+    });
+    folders[folderName] = { done:doneSum, total:totalSum, subs };
   });
+
+  // AI Agent: cố định 6 buổi, đánh dấu buổi nào đã học dựa trên task "Lớp AI Agent (Buổi N)"
+  const doneBuoi = new Set();
+  ALL_TASKS.forEach(t => {
+    if(extractTag(t.name) !== 'Lớp học') return;
+    const m = t.name.match(/Buổi\s*(\d+)/i);
+    if(m && t.status==='Done') doneBuoi.add(m[1]);
+  });
+  const aiSubs = {};
+  for(let i=1;i<=AI_AGENT_TOTAL_BUOI;i++){
+    aiSubs['Buổi '+i] = { done: doneBuoi.has(String(i)) ? 1 : 0, total:1 };
+  }
+  folders['AI Agent'] = { done: doneBuoi.size, total: AI_AGENT_TOTAL_BUOI, subs: aiSubs };
+
   return folders;
 }
 
@@ -308,42 +327,10 @@ function normalizeName(s){
     .toLowerCase();
 }
 
-function coreMatch(a, b){
-  if(!a || !b) return false;
-  if(a === b) return true;
-  // chấp nhận trường hợp 1 bên có thêm động từ đầu câu (vd "Dạy lớp Pikachu" vs "Lớp Pikachu")
-  return a.endsWith(b) || b.endsWith(a) || a.includes(' '+b) || b.includes(' '+a);
-}
-
 function itemsForDay(dateStr){
-  const tasks = ALL_TASKS.filter(x => dateKey(x.due) === dateStr);
-  const events = ALL_EVENTS.filter(x => dateKey(x.start) === dateStr);
-
-  const usedEventIds = new Set();
-  const merged = [];
-
-  tasks.forEach(t => {
-    const norm = normalizeName(t.name);
-    const match = events.find(e => !usedEventIds.has(e.id) && coreMatch(normalizeName(e.title.replace(/^✅ /,'')), norm));
-    if(match){
-      usedEventIds.add(match.id);
-      merged.push({
-        id: t.id, eventId: match.id,
-        name: match.title.replace(/^✅ /,''),
-        done: (t.status==='Done') || match.done,
-        time: fmtTime(match.start),
-        source: 'both'
-      });
-    } else {
-      merged.push({ id:t.id, name:t.name, done:t.status==='Done', time:'', source:'notion' });
-    }
-  });
-
-  events.filter(e => !usedEventIds.has(e.id)).forEach(e => {
-    merged.push({ id:e.id, name:e.title.replace(/^✅ /,''), done:e.done, time:fmtTime(e.start), source:'gcal' });
-  });
-
-  return merged.sort((a,b)=> (a.time||'').localeCompare(b.time||''));
+  return ALL_TASKS
+    .filter(x => dateKey(x.due) === dateStr)
+    .map(x => ({ id:x.id, name:x.name, done:x.status==='Done' }));
 }
 function fmtTime(iso){
   if(!iso) return '';
@@ -368,15 +355,19 @@ function renderCalendar(){
     const dateObj = new Date(viewYear, viewMonth, d);
     const dateStr = ymd(dateObj);
     const items = itemsForDay(dateStr);
-    const doneCount = items.filter(x=>x.done).length;
     const isToday = dateStr === todayStr;
-    const allDone = items.length>0 && doneCount===items.length;
-    const dots = items.slice(0,5).map(x=>`<span class="dot ${x.done?'done':''}"></span>`).join('');
+
+    const MAX_SHOW = 3;
+    const lines = items.slice(0, MAX_SHOW).map(it =>
+      `<div class="ev-line ${it.done?'done':''}">${it.done?'✓ ':''}${it.name}</div>`
+    ).join('');
+    const moreCount = items.length - MAX_SHOW;
+    const moreLine = moreCount > 0 ? `<div class="ev-more">+${moreCount} khác</div>` : '';
 
     const cell = document.createElement('div');
     cell.className = 'cal-day' + (isToday?' today':'');
     cell.dataset.date = dateStr;
-    cell.innerHTML = `<span class="num">${d}</span><div class="dots">${dots}</div>${allDone?'<span class="allDone">✅</span>':''}`;
+    cell.innerHTML = `<span class="num">${d}</span>${lines}${moreLine}`;
     cell.onclick = () => openSheet(dateStr);
     grid.appendChild(cell);
   }
@@ -408,38 +399,25 @@ function renderSheetBody(dateStr){
   const items = itemsForDay(dateStr);
   const body = document.getElementById('sheetBody');
   if(!items.length){ body.innerHTML = '<div class="empty">Không có việc nào trong ngày này.</div>'; return; }
-  body.innerHTML = items.map(it => {
-    const tag = it.source==='notion' ? '<span class="src-tag notion">Notion</span>'
-      : it.source==='gcal' ? '<span class="src-tag gcal">Calendar</span>'
-      : '<span class="src-tag notion">Notion</span><span class="src-tag gcal">Calendar</span>';
-    return `
+  body.innerHTML = items.map(it => `
     <div class="item">
-      <input type="checkbox" ${it.done?'checked':''} onchange="toggleItem('${it.source}','${it.id}', this.checked, '${dateStr}', '${it.eventId||''}')">
+      <input type="checkbox" ${it.done?'checked':''} onchange="toggleItem('${it.id}', this.checked, '${dateStr}')">
       <div>
-        <div class="item-name ${it.done?'done':''}">${it.name}${tag}</div>
-        <div class="item-time">${it.time}</div>
+        <div class="item-name ${it.done?'done':''}">${it.name}</div>
       </div>
-    </div>`;
-  }).join('');
+    </div>`).join('');
 }
 
-async function toggleItem(source, id, checked, dateStr, eventId){
-  setStatus('Đang đồng bộ...');
+async function toggleItem(id, checked, dateStr){
+  setStatus('Đang cập nhật Notion...');
   try{
-    if(source === 'notion' || source === 'both'){
-      await api('/api/tasks/' + id, { method:'PATCH', body: JSON.stringify({ status: checked?'Done':'Not started' }) });
-      const t = ALL_TASKS.find(x=>x.id===id); if(t) t.status = checked?'Done':'Not started';
-    }
-    if(source === 'gcal' || source === 'both'){
-      const targetId = source==='both' ? eventId : id;
-      await api('/api/events/' + targetId, { method:'PATCH', body: JSON.stringify({ done: checked }) });
-      const e = ALL_EVENTS.find(x=>x.id===targetId); if(e) e.done = checked;
-    }
+    await api('/api/tasks/' + id, { method:'PATCH', body: JSON.stringify({ status: checked?'Done':'Not started' }) });
+    const t = ALL_TASKS.find(x=>x.id===id); if(t) t.status = checked?'Done':'Not started';
     renderSheetBody(dateStr);
     renderCalendar();
     renderStats();
-    setStatus('Đã đồng bộ ✓');
-  }catch(e){ setStatus('Lỗi đồng bộ: ' + e.message, true); loadMonthData(); }
+    setStatus('Đã đồng bộ với Notion ✓');
+  }catch(e){ setStatus('Lỗi cập nhật: ' + e.message, true); loadMonthData(); }
 }
 
 loadConfig();
