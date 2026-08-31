@@ -72,6 +72,24 @@
 
   .status-line{font-size:12px;color:var(--ink-soft);text-align:center;margin-top:14px;}
   .status-line.err{color:#B23A3A;}
+
+  /* ---- Subject folders ---- */
+  .folder{border-bottom:1px dashed var(--line);}
+  .folder:last-child{border-bottom:none;}
+  .folder-head{display:flex;align-items:center;justify-content:space-between;padding:10px 4px;cursor:pointer;}
+  .folder-name{font-weight:700;font-size:14px;display:flex;align-items:center;gap:8px;}
+  .folder-chevron{font-size:12px;color:var(--leaf);transition:transform .2s;}
+  .folder.open .folder-chevron{transform:rotate(90deg);}
+  .folder-pct-wrap{display:flex;align-items:center;gap:8px;}
+  .folder-count{font-size:12px;color:var(--ink-soft);}
+  .folder-bar-track{width:60px;height:6px;border-radius:4px;background:var(--leaf-pale);overflow:hidden;}
+  .folder-bar-fill{height:100%;background:var(--done-grad);}
+  .folder-body{display:none;padding:0 4px 10px 4px;}
+  .folder.open .folder-body{display:block;}
+  .subrow{display:flex;align-items:center;justify-content:space-between;padding:6px 8px;font-size:13px;
+    background:#FAFCF7;border-radius:8px;margin-top:5px;}
+  .subrow-name{color:var(--ink);}
+  .subrow-count{font-size:11px;color:var(--ink-soft);font-weight:700;}
 </style>
 </head>
 <body>
@@ -92,8 +110,12 @@
     </div>
     <div class="stat-card">
       <div class="stat-value" id="statWeek">0%</div>
-      <div class="stat-label">Tiến độ tuần</div>
+      <div class="stat-label">Tiến độ học tập</div>
     </div>
+  </div>
+
+  <div class="cal-card" id="foldersCard" style="margin-bottom:16px;">
+    <div id="folderList"></div>
   </div>
 
   <div class="setup" id="setupBox">
@@ -195,7 +217,84 @@ function changeMonth(delta){
   loadMonthData();
 }
 
-function normalizeName(s){
+function extractTag(name){
+  const m = name.match(/^\[([^\]]+)\]/);
+  return m ? m[1] : 'Khác';
+}
+
+// Tag trong ngoặc vuông -> thư mục môn học lớn
+const FOLDER_MAP = {
+  'Ngữ pháp':'IELTS', 'Writing':'IELTS', 'Speaking':'IELTS', 'Listening':'IELTS',
+  'Reading':'IELTS', 'IELTS':'IELTS', 'VSTEP':'IELTS', 'Từ vựng':'IELTS',
+  'HSK':'HSK',
+  'Lớp học':'AI Agent',
+};
+const FOLDER_ORDER = ['IELTS','HSK','AI Agent'];
+
+function buildFolders(){
+  const folders = {}; // folderName -> { done, total, subs: { subName: {done,total} } }
+  ALL_TASKS.forEach(t => {
+    const tag = extractTag(t.name);
+    const folderName = FOLDER_MAP[tag];
+    if(!folderName) return; // bỏ qua việc không thuộc nhóm học tập (Dạy, Kênh, Công việc...)
+
+    if(!folders[folderName]) folders[folderName] = { done:0, total:0, subs:{} };
+    const f = folders[folderName];
+    f.total++; if(t.status==='Done') f.done++;
+
+    let subKey = tag;
+    if(folderName === 'AI Agent'){
+      const bm = t.name.match(/Buổi\s*\d+/i);
+      subKey = bm ? bm[0] : normalizeName(t.name);
+    }
+    if(!f.subs[subKey]) f.subs[subKey] = { done:0, total:0 };
+    f.subs[subKey].total++; if(t.status==='Done') f.subs[subKey].done++;
+  });
+  return folders;
+}
+
+let OPEN_FOLDERS = new Set();
+
+function renderFolders(){
+  const folders = buildFolders();
+  const el = document.getElementById('folderList');
+  const names = FOLDER_ORDER.filter(n => folders[n]);
+  if(!names.length){ el.innerHTML = '<div class="empty">Chưa có dữ liệu môn học.</div>'; return; }
+
+  el.innerHTML = names.map(name => {
+    const f = folders[name];
+    const pct = f.total ? Math.round(f.done/f.total*100) : 0;
+    const isOpen = OPEN_FOLDERS.has(name);
+    const subsHtml = Object.entries(f.subs).map(([subName, s]) => `
+      <div class="subrow">
+        <span class="subrow-name">${subName}</span>
+        <span class="subrow-count">${s.done}/${s.total}</span>
+      </div>`).join('');
+    return `
+      <div class="folder ${isOpen?'open':''}" data-folder="${name}">
+        <div class="folder-head" onclick="toggleFolder('${name}')">
+          <div class="folder-name"><span class="folder-chevron">›</span>${name}</div>
+          <div class="folder-pct-wrap">
+            <span class="folder-count">${f.done}/${f.total}</span>
+            <div class="folder-bar-track"><div class="folder-bar-fill" style="width:${pct}%"></div></div>
+          </div>
+        </div>
+        <div class="folder-body">${subsHtml}</div>
+      </div>`;
+  }).join('');
+}
+
+function toggleFolder(name){
+  if(OPEN_FOLDERS.has(name)) OPEN_FOLDERS.delete(name); else OPEN_FOLDERS.add(name);
+  renderFolders();
+}
+
+function overallLearningPct(){
+  const folders = buildFolders();
+  let done=0, total=0;
+  Object.values(folders).forEach(f => { done+=f.done; total+=f.total; });
+  return total ? Math.round(done/total*100) : 0;
+}
   return s
     .replace(/^\[[^\]]*\]\s*/,'')      // bỏ tiền tố dạng [Ngữ pháp], [Kênh]...
     .replace(/\s*\([^)]*\)\s*$/,'')     // bỏ hậu tố giờ giấc dạng (16h-16h30)
@@ -279,19 +378,8 @@ function renderStats(){
   const todayDone = todayItems.filter(x=>x.done).length;
   document.getElementById('statToday').textContent = todayDone + '/' + todayItems.length;
 
-  const dow = now.getDay();
-  const diffToMon = dow===0 ? -6 : 1-dow;
-  const monday = new Date(now); monday.setDate(now.getDate()+diffToMon); monday.setHours(0,0,0,0);
-  const sunday = new Date(monday); sunday.setDate(monday.getDate()+6);
-
-  let weekTotal=0, weekDone=0;
-  for(let d=new Date(monday); d<=sunday; d.setDate(d.getDate()+1)){
-    const items = itemsForDay(ymd(d));
-    weekTotal += items.length;
-    weekDone += items.filter(x=>x.done).length;
-  }
-  const pct = weekTotal ? Math.round(weekDone/weekTotal*100) : 0;
-  document.getElementById('statWeek').textContent = pct + '%';
+  document.getElementById('statWeek').textContent = overallLearningPct() + '%';
+  renderFolders();
 }
 
 function openSheet(dateStr){
