@@ -295,6 +295,7 @@ function overallLearningPct(){
   Object.values(folders).forEach(f => { done+=f.done; total+=f.total; });
   return total ? Math.round(done/total*100) : 0;
 }
+function normalizeName(s){
   return s
     .replace(/^\[[^\]]*\]\s*/,'')      // bỏ tiền tố dạng [Ngữ pháp], [Kênh]...
     .replace(/\s*\([^)]*\)\s*$/,'')     // bỏ hậu tố giờ giấc dạng (16h-16h30)
