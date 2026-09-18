@@ -127,11 +127,14 @@
   .hud-hp svg{width:16px;height:16px;}
   .hud-hp span{font:700 0.62rem "JetBrains Mono",monospace;color:var(--surface-ink);}
 
-  .resource-row{flex:0 0 auto;display:flex;gap:6px;margin:7px 10px 0;}
+  .resource-bar{flex:0 0 auto;display:flex;gap:6px;margin:7px 10px 0;align-items:stretch;}
+  .resource-row{flex:1;display:flex;gap:6px;min-width:0;}
   .res-chip{flex:1;display:flex;align-items:center;justify-content:center;gap:5px;background:var(--card);border:1.5px solid var(--driftwood);border-radius:12px;padding:4px 6px;font-size:0.76rem;font-weight:700;color:var(--ink);position:relative;}
   .res-chip svg{width:16px;height:16px;flex:0 0 auto;}
   .res-chip .gold-chip{color:var(--coral-deep);}
   .res-icon-img{width:18px;height:18px;flex:0 0 auto;object-fit:contain;}
+  .weather-badge{flex:0 0 auto;aspect-ratio:1/1;width:34px;background:var(--card);border:1.5px solid var(--driftwood);border-radius:12px;display:flex;align-items:center;justify-content:center;}
+  .weather-badge svg{width:60%;height:60%;}
 
   .viewport{
     flex:1;margin:8px 10px 0;border-radius:12px;position:relative;overflow:hidden;
@@ -353,6 +356,11 @@
   .tut-actions{display:flex;justify-content:space-between;align-items:center;gap:8px;}
   .tut-skip{font-size:0.78rem;color:var(--ink-soft);text-decoration:underline;background:none;border:none;padding:4px;cursor:pointer;}
   .tut-next{flex:0 0 auto;min-width:110px;}
+  .gender-pick-row{display:flex;gap:10px;}
+  .gender-pick{flex:1;display:flex;flex-direction:column;align-items:center;gap:6px;padding:8px;border-radius:14px;border:2px solid var(--driftwood);background:var(--card);}
+  .gender-pick:active{background:var(--paper-deep);}
+  .gender-pick img{width:100%;aspect-ratio:1/1;object-fit:cover;border-radius:10px;}
+  .gender-pick span{font:700 0.84rem "Baloo 2";color:var(--ink);}
 
   #toast{
     position:fixed;left:50%;bottom:18px;transform:translate(-50%,12px);
@@ -433,7 +441,10 @@
       </div>
     </div>
 
-    <div class="resource-row" id="resource-row"></div>
+    <div class="resource-bar">
+      <div class="resource-row" id="resource-row"></div>
+      <div class="weather-badge" id="weather-badge" title="Thời tiết"></div>
+    </div>
 
     <div class="viewport" id="viewport">
       <svg class="vp-palm left" viewBox="0 0 60 80" fill="none"><path d="M32 78c0-24 2-40 6-52" stroke="currentColor" stroke-width="4" fill="none" stroke-linecap="round"/><path d="M38 26c-10-6-20-6-28-2 8 8 18 9 28 2Z" fill="currentColor"/><path d="M38 26c-4-10-2-18 4-24 6 8 6 17 -4 24Z" fill="currentColor"/><path d="M38 26c10-6 20-6 28-2-8 8-18 9-28 2Z" fill="currentColor"/></svg>
@@ -533,6 +544,21 @@
   ];
   var ITEM_NAMES = { crop:'nông sản', meat:'thịt', wood:'gỗ trôi dạt' };
   var RATES = { crop:3, meat:4, wood:2 };
+
+  // Weather badge just mirrors the app's existing data-theme (day/night/storm) —
+  // that cosmetic preview switch is the only "weather" state the engine has;
+  // no 4th state, no new persisted field.
+  function artWeatherSun(){ return svg('0 0 24 24', '<circle cx="12" cy="12" r="5" fill="#F4D06F"/><g stroke="#F4D06F" stroke-width="2" stroke-linecap="round"><path d="M12 2v3M12 19v3M2 12h3M19 12h3M4.9 4.9l2.1 2.1M17 17l2.1 2.1M19.1 4.9 17 7M7 17l-2.1 2.1"/></g>'); }
+  function artWeatherMoon(){ return svg('0 0 24 24', '<path d="M20 14.5A8.5 8.5 0 1 1 9.5 4a7 7 0 0 0 10.5 10.5Z" fill="#B8C4D9"/>'); }
+  function artWeatherStorm(){ return svg('0 0 24 24', '<path d="M6 15a4.5 4.5 0 0 1 .3-9 5.5 5.5 0 0 1 10.6 1.4A4 4 0 0 1 17 15H6Z" fill="#9AA6B5"/><path d="M11 16l-2 4M15 16l-2 4" stroke="#F4D06F" stroke-width="2" stroke-linecap="round"/>'); }
+  var WEATHER_ICONS = { day: artWeatherSun, night: artWeatherMoon, storm: artWeatherStorm };
+  var WEATHER_LABELS = { day: 'Ngày', night: 'Đêm', storm: 'Bão' };
+  function renderWeatherBadge(){
+    var theme = app.getAttribute('data-theme') || 'day';
+    var badge = document.getElementById('weather-badge');
+    badge.innerHTML = '<svg viewBox="0 0 24 24">' + (WEATHER_ICONS[theme] || WEATHER_ICONS.day)() + '</svg>';
+    badge.title = 'Thời tiết: ' + (WEATHER_LABELS[theme] || WEATHER_LABELS.day);
+  }
 
   var MONSTERS = [
     { name:'Heo Rừng', hp:6, dmg:[1,3], reward:{ gold:[3,6], meat:[1,2] } },
@@ -667,7 +693,7 @@
   function defaultState(){
     return {
       day: 1, energy: 10, hp: 10, gold: 0, pearls: 0, talent: null,
-      gender: 'nam', // TODO: no gender-selection UI yet; defaulting to "nam" art per spec until one exists
+      gender: 'nam', // overwritten by the Day-1 gender pick (first step of the onboarding tutorial below)
       ordersDelivered: 0, decorations: {},
       farm: [{stage:0,watered:false},{stage:0,watered:false},{stage:0,watered:false},
              {stage:0,watered:false},{stage:0,watered:false},{stage:0,watered:false}],
@@ -719,6 +745,7 @@
       var name = btn.getAttribute('data-theme-btn');
       app.setAttribute('data-theme', name);
       document.querySelectorAll('.theme-btn').forEach(function(b){ b.classList.toggle('active', b === btn); });
+      renderWeatherBadge();
     });
   });
   document.getElementById('btn-reset').addEventListener('click', function(){
@@ -777,32 +804,58 @@
     { target: '#cta-sail', text: 'Nhấn RA KHƠI để khám phá hoang dã — kiếm vàng, thịt, gỗ!' }
   ];
   var tutStep = 0;
-  function startTutorial(){ tutStep = 0; showTutorialStep(); }
+  var tutGenderChosen = false; // in-memory only for this one run; gated by state.seenTutorial below, no parallel flag
+  function startTutorial(){ tutStep = 0; tutGenderChosen = false; showTutorialStep(); }
+  function genderStepHtml(){
+    return '<span class="tut-step-label">Trước khi bắt đầu</span>' +
+      '<p class="tut-text">Bạn muốn nhân vật của mình là?</p>' +
+      '<div class="gender-pick-row">' +
+        '<button class="gender-pick" data-gender="nam" type="button">' +
+          '<img src="assets/ui/ui-hud-player-profile-nam.jpg" alt="Nam"><span>Nam</span>' +
+        '</button>' +
+        '<button class="gender-pick" data-gender="nu" type="button">' +
+          '<img src="assets/ui/ui-hud-player-profile-nu.jpg" alt="Nữ"><span>Nữ</span>' +
+        '</button>' +
+      '</div>';
+  }
   function showTutorialStep(){
-    var step = TUT_STEPS[tutStep];
     var overlay = document.getElementById('tut-overlay');
     if(!overlay){
       overlay = document.createElement('div');
       overlay.id = 'tut-overlay';
-      overlay.innerHTML = '<div class="tut-highlight" hidden></div>' +
-        '<div class="tut-card">' +
-          '<span class="tut-step-label"></span>' +
-          '<p class="tut-text"></p>' +
-          '<div class="tut-actions">' +
-            '<button class="tut-skip" type="button">Bỏ qua</button>' +
-            '<button class="m-btn primary tut-next" type="button">Tiếp theo</button>' +
-          '</div>' +
-        '</div>';
       app.appendChild(overlay);
-      overlay.querySelector('.tut-skip').addEventListener('click', endTutorial);
-      overlay.querySelector('.tut-next').addEventListener('click', function(){
-        tutStep++;
-        if(tutStep >= TUT_STEPS.length){ endTutorial(); } else { showTutorialStep(); }
-      });
     }
-    overlay.querySelector('.tut-step-label').textContent = 'Bước ' + (tutStep + 1) + '/' + TUT_STEPS.length;
-    overlay.querySelector('.tut-text').textContent = step.text;
-    overlay.querySelector('.tut-next').textContent = (tutStep === TUT_STEPS.length - 1) ? 'Bắt đầu chơi' : 'Tiếp theo';
+
+    if(!tutGenderChosen){
+      overlay.innerHTML = '<div class="tut-highlight" hidden></div><div class="tut-card">' + genderStepHtml() + '</div>';
+      overlay.querySelector('.tut-card').style.top = '40%';
+      overlay.querySelectorAll('.gender-pick').forEach(function(btn){
+        btn.addEventListener('click', function(){
+          state.gender = btn.getAttribute('data-gender');
+          save();
+          renderHud();
+          tutGenderChosen = true;
+          showTutorialStep();
+        });
+      });
+      return;
+    }
+
+    var step = TUT_STEPS[tutStep];
+    overlay.innerHTML = '<div class="tut-highlight" hidden></div>' +
+      '<div class="tut-card">' +
+        '<span class="tut-step-label">Bước ' + (tutStep + 1) + '/' + TUT_STEPS.length + '</span>' +
+        '<p class="tut-text">' + step.text + '</p>' +
+        '<div class="tut-actions">' +
+          '<button class="tut-skip" type="button">Bỏ qua</button>' +
+          '<button class="m-btn primary tut-next" type="button">' + (tutStep === TUT_STEPS.length - 1 ? 'Bắt đầu chơi' : 'Tiếp theo') + '</button>' +
+        '</div>' +
+      '</div>';
+    overlay.querySelector('.tut-skip').addEventListener('click', endTutorial);
+    overlay.querySelector('.tut-next').addEventListener('click', function(){
+      tutStep++;
+      if(tutStep >= TUT_STEPS.length){ endTutorial(); } else { showTutorialStep(); }
+    });
 
     var hi = overlay.querySelector('.tut-highlight');
     var card = overlay.querySelector('.tut-card');
@@ -884,6 +937,7 @@
       '<div class="res-chip"><svg viewBox="0 0 24 24">' + ITEM_ART.crop() + '</svg>' + state.inv.crop + '</div>' +
       '<div class="res-chip"><svg viewBox="0 0 24 24">' + ITEM_ART.wood() + '</svg>' + state.inv.wood + '</div>' +
       '<div class="res-chip gold-chip"><img class="res-icon-img" src="assets/ui/ui-hud-resource-chips-coin.png" alt="">' + state.gold + '</div>';
+    renderWeatherBadge();
 
     var pct = Math.min(100, Math.round(state.gold / 50 * 100));
     document.getElementById('goal-fill').style.width = pct + '%';
