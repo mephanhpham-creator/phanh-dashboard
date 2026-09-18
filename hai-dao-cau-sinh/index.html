@@ -216,15 +216,7 @@
 
   /* ================= CHECK-IN ================= */
   .checkin-head{flex:0 0 auto;text-align:center;font-size:0.86rem;font-weight:700;color:var(--ink);padding:2px 10px 8px;}
-  .checkin-scene{flex:0 0 auto;position:relative;height:26%;overflow:hidden;border-radius:10px;margin:0 10px;}
-  .ci-sky{position:absolute;inset:0;background:linear-gradient(180deg,#BFE4EE,#EAF6EC);}
-  .ci-sun{position:absolute;right:16%;top:18%;width:13%;aspect-ratio:1;border-radius:50%;background:radial-gradient(circle,#fff6d8,var(--sand));}
-  .ci-sea{position:absolute;left:0;right:0;bottom:24%;height:22%;background:#3f8f95;overflow:hidden;}
-  .ci-wave{position:absolute;left:0;right:-120px;bottom:0;height:14px;opacity:.35;background-repeat:repeat-x;background-size:120px 20px;animation:waveMove 6s linear infinite;
-    background-image:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 120 20'><path d='M0 10 Q15 0 30 10 T60 10 T90 10 T120 10 V20 H0 Z' fill='%23ffffff'/></svg>");}
-  @keyframes waveMove{from{background-position-x:0}to{background-position-x:120px}}
-  .ci-shore{position:absolute;left:0;right:0;bottom:0;height:24%;background:var(--sand);}
-  .ci-palm{position:absolute;left:8%;bottom:14%;width:15%;color:var(--driftwood-deep);}
+  .checkin-banner{flex:0 0 auto;width:calc(100% - 20px);margin:0 10px;height:15%;min-height:70px;object-fit:cover;border-radius:10px;}
 
   .checkin-card{
     flex:1;margin:10px;background:var(--card);border:2px solid var(--driftwood);border-radius:14px;
@@ -235,10 +227,14 @@
   .checkin-chest.opening{animation:chestOpen .5s ease;}
   @keyframes chestOpen{0%{transform:scale(1) rotate(0)}40%{transform:scale(1.12) rotate(-6deg)}70%{transform:scale(1.05) rotate(4deg)}100%{transform:scale(1) rotate(0)}}
   .checkin-sub{font-size:0.74rem;color:var(--ink-soft);}
-  .streak-dots{display:flex;gap:6px;margin-top:2px;}
-  .dot{width:10px;height:10px;border-radius:50%;border:1.5px solid var(--line);}
-  .dot.filled{background:var(--turquoise);border-color:var(--turquoise);}
-  .dot.today{border-color:var(--coral);border-width:2px;}
+  .streak-dots{display:flex;gap:4px;margin-top:2px;flex-wrap:wrap;justify-content:center;}
+  .week-chip{display:flex;flex-direction:column;align-items:center;gap:2px;width:36px;padding:4px 2px;border-radius:9px;border:1.5px solid var(--line);background:var(--paper-deep);opacity:.5;}
+  .week-chip .res-icon-img{width:16px;height:16px;}
+  .week-chip .week-chip-day{font:700 0.56rem "JetBrains Mono",monospace;color:var(--ink-soft);}
+  .week-chip.filled{opacity:1;border-color:var(--turquoise);}
+  .week-chip.today{opacity:1;border-color:var(--coral);border-width:2px;box-shadow:0 0 0 2px rgba(250,130,49,.18);}
+  .week-chip.special{border-color:var(--sand);}
+  .week-chip.special.filled,.week-chip.special.today{border-width:2px;box-shadow:0 0 0 2px rgba(244,208,111,.4);}
 
   .cta-pill{
     flex:0 0 auto;margin:0 10px calc(env(safe-area-inset-bottom,0px) + 12px);height:46px;border-radius:23px;
@@ -247,6 +243,8 @@
     display:flex;align-items:center;justify-content:center;gap:8px;
   }
   .cta-pill.secondary{background:var(--card);color:var(--ink);border-color:var(--driftwood);}
+  .cta-pill.pulse{animation:pillPulse 1.6s ease-in-out infinite;}
+  @keyframes pillPulse{0%,100%{transform:scale(1);box-shadow:0 0 0 0 rgba(250,130,49,.35);}50%{transform:scale(1.035);box-shadow:0 0 0 8px rgba(250,130,49,0);}}
 
   /* ================= MODALS (combat / inventory / journal / tutorial / reset) ================= */
   .modal-backdrop{
@@ -386,13 +384,7 @@
   <!-- ============== CHECK-IN SCREEN ============== -->
   <section class="screen screen-checkin" id="screen-checkin" hidden>
     <div class="checkin-head" id="checkin-daylabel">Ngày 1 · Bình minh</div>
-    <div class="checkin-scene">
-      <div class="ci-sky"><div class="ci-sun"></div></div>
-      <div class="ci-sea"><div class="ci-wave"></div></div>
-      <div class="ci-shore">
-        <svg class="ci-palm" viewBox="0 0 60 80" fill="none"><path d="M32 78c0-24 2-40 6-52" stroke="currentColor" stroke-width="4" fill="none" stroke-linecap="round"/><path d="M38 26c-10-6-20-6-28-2 8 8 18 9 28 2Z" fill="currentColor"/><path d="M38 26c-4-10-2-18 4-24 6 8 6 17 -4 24Z" fill="currentColor"/><path d="M38 26c10-6 20-6 28-2-8 8-18 9-28 2Z" fill="currentColor"/></svg>
-      </div>
-    </div>
+    <img class="checkin-banner" src="assets/ui/ui-modal-daily-bonus-banner.jpg" alt="">
     <div class="checkin-card">
       <p class="checkin-line" id="checkin-line">Sóng đêm dạt vào 1 chiếc rương</p>
       <div class="checkin-chest" id="checkin-chest">
@@ -405,7 +397,7 @@
       <p class="checkin-sub" id="checkin-sub">Chạm để mở — phần thưởng ngày 1</p>
       <div class="streak-dots" id="streak-dots" aria-hidden="true"></div>
     </div>
-    <button class="cta-pill" id="btn-open-chest" type="button">Mở rương</button>
+    <button class="cta-pill pulse" id="btn-open-chest" type="button">Nhận quà</button>
   </section>
 
   <!-- ============== HOMESTEAD SCREEN ============== -->
@@ -535,6 +527,35 @@
   var MAX_ORDERS = 3;
   var ORDER_REFILL_DELAY = 2; // days between a delivered order and a new one appearing — avoids a grindy always-full board
   var ORDER_RES_LABEL = { crop:'nông sản', meat:'thịt', wood:'gỗ trôi dạt', gold:'vàng' };
+
+  /* ---------------- daily check-in reward schedule ----------------
+     7 fixed slots keyed by (day-1)%7, the same streak position the
+     existing dot/chip row already computes — the streak counting itself
+     is untouched. Days 2/3/5 hand over exactly the quantity an order
+     board template asks for (2 wood = ord_wood_1, 3 crop = ord_crop_1,
+     2 meat = ord_meat_1) so claiming nudges the player back to the
+     board with something to deliver immediately. Gold days sit in the
+     10-16 range the old flat 10-15 reward used. Day 7 bundles gold +
+     wood + crop for clearly the biggest total value of the week — the
+     "special gold-bordered card" from the spec — still no new currency. */
+  var WEEKLY_REWARDS = [
+    { gold: 10 },
+    { wood: 2 },
+    { crop: 3 },
+    { gold: 14 },
+    { meat: 2 },
+    { gold: 16 },
+    { gold: 30, wood: 2, crop: 3 }
+  ];
+  function applyReward(reward){
+    Object.keys(reward).forEach(function(k){
+      if(k === 'gold') state.gold += reward[k];
+      else state.inv[k] = (state.inv[k] || 0) + reward[k];
+    });
+  }
+  function rewardText(reward){
+    return Object.keys(reward).map(function(k){ return '+' + reward[k] + ' ' + ORDER_RES_LABEL[k]; }).join(', ');
+  }
 
   function orderResourceIcon(resource){
     if(resource === 'gold') return '<img class="res-icon-img" src="assets/ui/ui-hud-resource-chips-coin.png" alt="">';
@@ -740,27 +761,39 @@
   /* ---------------- check-in ---------------- */
   function renderCheckin(){
     document.getElementById('checkin-daylabel').textContent = 'Ngày ' + state.day + ' · Bình minh';
-    document.getElementById('checkin-sub').textContent = 'Chạm để mở — phần thưởng ngày ' + state.day;
     var pos = (state.day - 1) % 7;
+    document.getElementById('checkin-sub').textContent = 'Chạm để nhận: ' + rewardText(WEEKLY_REWARDS[pos]);
     var dotsHtml = '';
     for(var i = 0; i < 7; i++){
-      var cls = i < pos ? 'filled' : (i === pos ? 'today' : '');
-      dotsHtml += '<span class="dot ' + cls + '"></span>';
+      var cls = 'week-chip';
+      if(i < pos) cls += ' filled'; else if(i === pos) cls += ' today';
+      if(i === 6) cls += ' special';
+      var iconResource = Object.keys(WEEKLY_REWARDS[i])[0];
+      dotsHtml += '<span class="' + cls + '">' + orderResourceIcon(iconResource) +
+        '<span class="week-chip-day">' + (i + 1) + '</span></span>';
     }
     document.getElementById('streak-dots').innerHTML = dotsHtml;
     document.getElementById('checkin-chest').classList.remove('opening');
+    var btn = document.getElementById('btn-open-chest');
+    btn.disabled = false;
+    btn.textContent = 'Nhận quà';
+    btn.classList.add('pulse');
   }
   function claimCheckin(){
     var chest = document.getElementById('checkin-chest');
+    var btn = document.getElementById('btn-open-chest');
     chest.classList.add('opening');
-    var reward = { gold: 10 + rand(0,5), wood: 1 };
+    btn.classList.remove('pulse');
+    btn.disabled = true;
+    btn.textContent = 'Đã nhận ✓';
+    var pos = (state.day - 1) % 7;
+    var reward = WEEKLY_REWARDS[pos];
     setTimeout(function(){
-      state.gold += reward.gold;
-      state.inv.wood += reward.wood;
+      applyReward(reward);
       state.claimedDay = state.day;
-      addLog('Ngày ' + state.day + ': nhận điểm danh +' + reward.gold + ' vàng, +' + reward.wood + ' gỗ trôi dạt.');
+      addLog('Ngày ' + state.day + ': nhận điểm danh ' + rewardText(reward) + '.');
       save();
-      toast('Nhận được: +' + reward.gold + ' vàng, +' + reward.wood + ' gỗ trôi dạt.');
+      toast('Nhận được: ' + rewardText(reward) + '.');
     }, 250);
     setTimeout(function(){ renderAll(); }, 650);
   }
