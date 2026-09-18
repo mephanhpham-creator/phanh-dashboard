@@ -308,6 +308,20 @@
   .order-complete{animation:orderComplete .32s ease forwards;}
   @keyframes orderComplete{0%{opacity:1;transform:scale(1);}100%{opacity:0;transform:scale(.92);}}
 
+  /* ---- balo tabs + island market (Pearls) ---- */
+  .modal-header-row{display:flex;align-items:center;justify-content:space-between;gap:8px;}
+  .pearl-balance{display:flex;align-items:center;gap:4px;font:700 0.82rem "JetBrains Mono",monospace;color:var(--ink);background:var(--paper-deep);border:1.5px solid var(--line);border-radius:999px;padding:3px 10px;flex:0 0 auto;}
+  .tab-row{display:flex;gap:6px;background:var(--paper-deep);border-radius:999px;padding:3px;}
+  .tab-btn{flex:1;text-align:center;padding:7px 0;border-radius:999px;font:700 0.8rem "Baloo 2";color:var(--ink-soft);}
+  .tab-btn.active{background:var(--turquoise);color:#fff;}
+  .market-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:10px;}
+  .market-card{background:var(--paper-deep);border:2px solid var(--driftwood);border-radius:12px;padding:10px 8px;display:flex;flex-direction:column;align-items:center;gap:5px;text-align:center;}
+  .market-card-icon{width:30px;height:30px;}
+  .market-card-icon .res-icon-img{width:28px;height:28px;}
+  .market-card-name{font:700 0.76rem "Baloo 2";color:var(--ink);line-height:1.2;min-height:2.1em;}
+  .market-card-price{display:flex;align-items:center;gap:3px;font:700 0.74rem "JetBrains Mono",monospace;color:var(--coral-deep);}
+  .market-card-owned{font-size:0.66rem;color:var(--turquoise-deep);font-weight:700;}
+
   .journal-line{font-size:0.82rem;line-height:1.5;font-style:italic;}
   .journal-line.muted{color:var(--ink-soft);font-style:normal;}
   .journal-day{font-style:normal;font:700 0.7rem "JetBrains Mono",monospace;color:var(--ink-soft);margin-right:4px;}
@@ -492,7 +506,10 @@
   function artCrop(){ return svg('0 0 24 24', '<path d="M12 21V9" stroke="#3f7a3a" stroke-width="2" stroke-linecap="round"/><path d="M12 12c0-5-4-7-8-7 1 5 4 8 8 7Z" fill="#4f8f46"/><path d="M12 12c0-5 4-7 8-7-1 5-4 8-8 7Z" fill="#5fa64f"/><path d="M8 18c0-3 1.5-6 4-8 2.5 2 4 5 4 8 0 2.5-1.8 4-4 4s-4-1.5-4-4Z" fill="#e08a2e"/>'); }
   function artMeat(){ return svg('0 0 24 24', '<path d="M9 3c5 0 9 4 9 9 0 4-3 7-6 8l-3 3-2-2 2-3c-2-1-3-3-3-6 0-5 1-9 3-9Z" fill="#a85c3c"/><circle cx="6" cy="19" r="2" fill="#e9d9b0"/>'); }
   function artWood(){ return svg('0 0 24 24', '<rect x="2" y="8" width="20" height="8" rx="4" fill="#8a5a34"/><ellipse cx="4.5" cy="12" rx="2.5" ry="4" fill="#c9a06c"/><ellipse cx="19.5" cy="12" rx="2.5" ry="4" fill="#c9a06c"/>'); }
-  var ITEM_ART = { crop: artCrop, meat: artMeat, wood: artWood };
+  // Pearls has no source art (unlike crop/meat/wood/gold); this is the one simple glyph the
+  // spec allows adding, kept to the existing palette (soft lavender-white, driftwood outline).
+  function artPearl(){ return svg('0 0 24 24', '<circle cx="12" cy="12" r="9" fill="#E7E0F0" stroke="#8A6A45" stroke-width="1.3"/><ellipse cx="9" cy="8.6" rx="2.4" ry="1.6" fill="#ffffff" opacity="0.85"/>'); }
+  var ITEM_ART = { crop: artCrop, meat: artMeat, wood: artWood, pearl: artPearl };
   var ITEM_NAMES = { crop:'nông sản', meat:'thịt', wood:'gỗ trôi dạt' };
   var RATES = { crop:3, meat:4, wood:2 };
 
@@ -526,7 +543,7 @@
   ];
   var MAX_ORDERS = 3;
   var ORDER_REFILL_DELAY = 2; // days between a delivered order and a new one appearing — avoids a grindy always-full board
-  var ORDER_RES_LABEL = { crop:'nông sản', meat:'thịt', wood:'gỗ trôi dạt', gold:'vàng' };
+  var ORDER_RES_LABEL = { crop:'nông sản', meat:'thịt', wood:'gỗ trôi dạt', gold:'vàng', pearl:'Pearl' };
 
   /* ---------------- daily check-in reward schedule ----------------
      7 fixed slots keyed by (day-1)%7, the same streak position the
@@ -589,6 +606,28 @@
       .join(', ');
   }
 
+  /* ---------------- Pearls + island market decorations ----------------
+     Pearls are a separate rare currency, earned only from the order board
+     (every ORDERS_PER_PEARL-th successful delivery) and spendable only on
+     decorations here — never mixed with gold/wood/crop/meat or any other
+     system. Prices are derived from that source, not guessed: a delivered
+     order needs a fresh board slot, and refillOrders() only opens one new
+     slot every ORDER_REFILL_DELAY (2) days, so a player delivering as fast
+     as the board restocks nets at most ~7/2 = 3.5 orders/week, i.e.
+     ~3.5/ORDERS_PER_PEARL ≈ 1.17 Pearls/week. At that rate the 1-Pearl item
+     clears in ~6 days (~1 week, matching the spec), and the 8-Pearl item
+     takes ~7 weeks — a genuine long-term goal. */
+  var ORDERS_PER_PEARL = 3;
+  var MARKET_ITEMS = [
+    // repeatable: true for items you'd plausibly want several of once placement exists
+    // (pots/lanterns/mats lining a path); false for one-off centerpiece pieces.
+    { id:'dec_flowerpot',   name:'Chậu hoa',            price:1, icon:'crop', repeatable:true },
+    { id:'dec_picnicchair', name:'Ghế dã ngoại',        price:2, icon:'wood', repeatable:false },
+    { id:'dec_lantern',     name:'Đèn lồng sân vườn',   price:3, icon:'wood', repeatable:true },
+    { id:'dec_grassmat',    name:'Thảm cỏ trang trí',   price:5, icon:'crop', repeatable:true },
+    { id:'dec_fountain',    name:'Đài phun nước mini',  price:8, icon:'gold', repeatable:false }
+  ];
+
   function rand(a,b){ return Math.floor(Math.random()*(b-a+1))+a; }
   function escapeHtml(s){ return String(s).replace(/[&<>"']/g, function(c){ return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]; }); }
 
@@ -596,8 +635,9 @@
   var state;
   function defaultState(){
     return {
-      day: 1, energy: 10, hp: 10, gold: 0, talent: null,
+      day: 1, energy: 10, hp: 10, gold: 0, pearls: 0, talent: null,
       gender: 'nam', // TODO: no gender-selection UI yet; defaulting to "nam" art per spec until one exists
+      ordersDelivered: 0, decorations: {},
       farm: [{stage:0,watered:false},{stage:0,watered:false},{stage:0,watered:false},
              {stage:0,watered:false},{stage:0,watered:false},{stage:0,watered:false}],
       inv: { crop:0, meat:0, wood:0 },
@@ -973,28 +1013,32 @@
     toast('Bạn đã ngất xỉu và mất ' + lost + ' vàng — được đưa về trại.');
   }
 
-  /* ---------------- backpack / merchant ---------------- */
-  document.getElementById('btn-backpack').addEventListener('click', function(){ openModal(backpackTemplate()); bindBackpack(); });
+  /* ---------------- backpack: sell tab + island market tab ---------------- */
+  var backpackTab = 'sell';
+  document.getElementById('btn-backpack').addEventListener('click', function(){ backpackTab = 'sell'; openModal(backpackTemplate()); });
   function backpackTemplate(){
+    return '<div class="modal">' +
+      '<button class="modal-close" data-close type="button">✕</button>' +
+      '<img class="market-banner" src="assets/ui/ui-screen-island-market-banner.jpg" alt="">' +
+      '<div class="modal-header-row"><h3>Balo</h3><span class="pearl-balance">' + orderResourceIcon('pearl') + state.pearls + '</span></div>' +
+      '<div class="tab-row">' +
+        '<button class="tab-btn' + (backpackTab === 'sell' ? ' active' : '') + '" data-tab="sell" type="button">Bán</button>' +
+        '<button class="tab-btn' + (backpackTab === 'market' ? ' active' : '') + '" data-tab="market" type="button">Chợ</button>' +
+      '</div>' +
+      (backpackTab === 'sell' ? sellTabHtml() : marketTabHtml()) +
+    '</div>';
+  }
+  function sellTabHtml(){
     var chips = ['crop','meat','wood'].map(function(k){
       return '<div class="item-chip">' + ITEM_ART[k]() + '<span class="item-count">×' + state.inv[k] + '</span><span class="muted">' + ITEM_NAMES[k] + '</span></div>';
     }).join('');
     var body = state.merchantAvailable
       ? '<p class="muted">Một thuyền buôn đã ghé Vịnh — bán tài nguyên lấy vàng theo giá: nông sản ' + RATES.crop + 'đ, thịt ' + RATES.meat + 'đ, gỗ ' + RATES.wood + 'đ mỗi phần.</p>'
       : '<p class="muted">Vịnh buôn bán hiện chưa có thuyền ghé — quay lại sau vài ngày.</p>';
-    return '<div class="modal">' +
-      '<button class="modal-close" data-close type="button">✕</button>' +
-      '<img class="market-banner" src="assets/ui/ui-screen-island-market-banner.jpg" alt="">' +
-      '<h3>Balo &amp; Vịnh buôn bán</h3>' +
-      '<div class="item-row">' + chips + '</div>' +
-      body +
+    return '<div class="item-row">' + chips + '</div>' + body +
       '<div class="modal-actions">' +
         (state.merchantAvailable ? '<button class="m-btn primary" id="btn-sell" type="button">Bán tất cả cho thương nhân</button>' : '') +
-      '</div></div>';
-  }
-  function bindBackpack(){
-    var btn = document.getElementById('btn-sell');
-    if(btn) btn.addEventListener('click', sellAll);
+      '</div>';
   }
   function sellAll(){
     var total = 0, parts = [];
@@ -1009,6 +1053,45 @@
     save(); closeModal(); renderAll(); checkGoal();
     toast('Đã bán, nhận +' + total + ' vàng.');
   }
+
+  function marketTabHtml(){
+    var cards = MARKET_ITEMS.map(marketItemCardHtml).join('');
+    return '<p class="muted">Đổi Pearl kiếm được từ Bảng đơn hàng lấy đồ trang trí cho đảo.</p>' +
+      '<div class="market-grid">' + cards + '</div>';
+  }
+  function marketItemCardHtml(item){
+    var owned = state.decorations[item.id] || 0;
+    var maxedOut = !item.repeatable && owned > 0;
+    var canAfford = state.pearls >= item.price;
+    var disabled = maxedOut || !canAfford;
+    var btnLabel = maxedOut ? 'Đã sở hữu' : (canAfford ? 'Mua' : 'Thiếu ' + (item.price - state.pearls));
+    return '<div class="market-card">' +
+      '<span class="market-card-icon">' + orderResourceIcon(item.icon) + '</span>' +
+      '<span class="market-card-name">' + item.name + '</span>' +
+      '<span class="market-card-price">' + orderResourceIcon('pearl') + item.price + '</span>' +
+      (owned > 0 ? '<span class="market-card-owned">Đã có ×' + owned + '</span>' : '') +
+      '<button class="m-btn primary market-buy" data-item="' + item.id + '" type="button"' + (disabled ? ' disabled' : '') + '>' + btnLabel + '</button>' +
+    '</div>';
+  }
+  function buyDecoration(itemId){
+    var item = MARKET_ITEMS.find(function(m){ return m.id === itemId; });
+    if(!item) return;
+    var owned = state.decorations[itemId] || 0;
+    if((!item.repeatable && owned > 0) || state.pearls < item.price) return;
+    state.pearls -= item.price;
+    state.decorations[itemId] = owned + 1;
+    addLog('Bạn đã đổi ' + item.price + ' Pearl lấy ' + item.name + '.');
+    toast('Đã mua ' + item.name + '!');
+    save();
+    openModal(backpackTemplate());
+  }
+  modalRoot.addEventListener('click', function(e){
+    if(e.target.closest('#btn-sell')){ sellAll(); return; }
+    var tabBtn = e.target.closest('.tab-btn');
+    if(tabBtn){ backpackTab = tabBtn.getAttribute('data-tab'); openModal(backpackTemplate()); return; }
+    var buyBtn = e.target.closest('.market-buy');
+    if(buyBtn && !buyBtn.disabled) buyDecoration(buyBtn.getAttribute('data-item'));
+  });
 
   /* ---------------- order board ---------------- */
   document.getElementById('goal-bar').addEventListener('click', function(){ openModal(orderBoardTemplate()); });
@@ -1045,10 +1128,14 @@
     order.requires.forEach(function(r){ state.inv[r.resource] -= r.qty; });
     if(order.reward.resource === 'gold'){ state.gold += order.reward.qty; }
     else { state.inv[order.reward.resource] = (state.inv[order.reward.resource] || 0) + order.reward.qty; }
-    addLog('Bạn đã giao một đơn hàng, nhận +' + order.reward.qty + ' ' + ORDER_RES_LABEL[order.reward.resource] + '.');
+    state.ordersDelivered++;
+    var pearlAwarded = (state.ordersDelivered % ORDERS_PER_PEARL === 0);
+    if(pearlAwarded) state.pearls++;
+    var gainedText = '+' + order.reward.qty + ' ' + ORDER_RES_LABEL[order.reward.resource] + (pearlAwarded ? ', +1 Pearl' : '');
+    addLog('Bạn đã giao một đơn hàng, nhận ' + gainedText + '.');
     var cardEl = modalRoot.querySelector('.order-card[data-order="' + orderId + '"]');
     if(cardEl) cardEl.classList.add('order-complete');
-    toast('Đã giao đơn hàng! +' + order.reward.qty + ' ' + ORDER_RES_LABEL[order.reward.resource] + '.');
+    toast('Đã giao đơn hàng! ' + gainedText + (pearlAwarded ? ' — mốc ' + ORDERS_PER_PEARL + ' đơn!' : '') + '.');
     setTimeout(function(){
       var idx = state.orders.findIndex(function(o){ return o.id === orderId; });
       if(idx >= 0) state.orders.splice(idx, 1);
@@ -1139,6 +1226,9 @@
   state = load() || defaultState();
   if(!Array.isArray(state.orders)) state.orders = seedInitialOrders(state.day); // migrate saves from before the order board
   if(typeof state.nextOrderRefillDay !== 'number') state.nextOrderRefillDay = state.day;
+  if(typeof state.pearls !== 'number') state.pearls = 0; // migrate saves from before Pearls/the island market
+  if(typeof state.ordersDelivered !== 'number') state.ordersDelivered = 0;
+  if(!state.decorations) state.decorations = {};
   renderAll();
 })();
 
