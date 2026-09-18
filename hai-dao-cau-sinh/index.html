@@ -157,12 +157,14 @@
 
   .goal-bar{
     flex:0 0 auto;margin:8px 10px 0;background:var(--surface);border-radius:12px;padding:6px 10px;
-    display:flex;align-items:center;gap:7px;color:var(--surface-ink);
+    display:flex;align-items:center;gap:7px;color:var(--surface-ink);text-align:left;cursor:pointer;
   }
+  .goal-bar:active{filter:brightness(.96);}
   .goal-bar svg{width:16px;height:16px;flex:0 0 auto;color:var(--coral);}
   .goal-text{flex:1;min-width:0;font-size:0.74rem;line-height:1.25;}
   .goal-track{width:44px;height:6px;border-radius:999px;background:rgba(0,0,0,.15);overflow:hidden;flex:0 0 auto;}
   .goal-fill{height:100%;background:var(--coral);border-radius:999px;}
+  .goal-chevron{flex:0 0 auto;font-size:1rem;line-height:1;color:var(--ink-soft);}
 
   .dock{
     flex:0 0 auto;position:relative;margin-top:10px;height:78px;overflow:visible;
@@ -296,6 +298,18 @@
   .item-count{font:700 0.78rem "JetBrains Mono",monospace;}
   .muted{color:var(--ink-soft);font-size:0.8rem;}
 
+  /* ---- order board ---- */
+  .order-list{display:flex;flex-direction:column;gap:10px;}
+  .order-card{background:var(--paper-deep);border:2px solid var(--driftwood);border-radius:12px;padding:10px 12px;display:flex;flex-direction:column;gap:8px;}
+  .order-row{display:flex;align-items:center;gap:6px;flex-wrap:wrap;}
+  .order-req-chip{display:flex;align-items:center;gap:4px;background:var(--card);border:1.5px solid var(--line);border-radius:999px;padding:3px 9px;font-size:0.76rem;font-weight:700;color:var(--ink);}
+  .order-req-chip.short{border-color:var(--coral);color:var(--coral-deep);}
+  .order-arrow{color:var(--ink-soft);font-weight:700;flex:0 0 auto;}
+  .order-reward-chip{display:flex;align-items:center;gap:4px;font-size:0.8rem;font-weight:700;color:var(--coral-deep);margin-left:auto;}
+  .order-hint{font-size:0.7rem;color:var(--coral-deep);}
+  .order-complete{animation:orderComplete .32s ease forwards;}
+  @keyframes orderComplete{0%{opacity:1;transform:scale(1);}100%{opacity:0;transform:scale(.92);}}
+
   .journal-line{font-size:0.82rem;line-height:1.5;font-style:italic;}
   .journal-line.muted{color:var(--ink-soft);font-style:normal;}
   .journal-day{font-style:normal;font:700 0.7rem "JetBrains Mono",monospace;color:var(--ink-soft);margin-right:4px;}
@@ -416,11 +430,12 @@
       <div class="vp-plots" id="vp-plots"></div>
     </div>
 
-    <div class="goal-bar" id="goal-bar">
+    <button class="goal-bar" id="goal-bar" type="button" title="Bảng đơn hàng đảo">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M3 15h18l-2.5 5h-13L3 15Z" fill="currentColor" stroke="none"/><path d="M12 3v10M12 5l5 3-5 2" stroke-linecap="round" stroke-linejoin="round" fill="none"/></svg>
       <span class="goal-text" id="goal-text">Tích vàng đóng bè · 0/50</span>
       <div class="goal-track"><div class="goal-fill" id="goal-fill" style="width:0%"></div></div>
-    </div>
+      <span class="goal-chevron" aria-hidden="true">›</span>
+    </button>
 
     <div class="dock">
       <button class="dock-btn" id="btn-backpack" title="Balo / Kho" type="button">
@@ -502,6 +517,57 @@
     'Đêm qua bạn mơ về đất liền xa xôi.'
   ];
 
+  /* ---------------- order board ----------------
+     Quantities are sized off the real engine numbers above, not guessed:
+     harvest yield is 1-3 crop/tile (1 + farmer bonus + watered bonus, see
+     tileAction), so 3 crop is reachable from a single good harvest or two
+     average ones. Daily check-in always grants +1 wood, so 2 wood needs
+     just two check-ins. Reward is priced at roughly 1.3-2x the merchant's
+     sell RATES above (merchant isn't always in port; the board always is),
+     paid only in gold — the currency the engine already has. */
+  var ORDER_TEMPLATES = [
+    { id:'ord_crop_1',  requires:[{ resource:'crop', qty:3 }],                          reward:{ resource:'gold', qty:12 }, minDay:1 },
+    { id:'ord_wood_1',  requires:[{ resource:'wood', qty:2 }],                          reward:{ resource:'gold', qty:8 },  minDay:1 },
+    { id:'ord_meat_1',  requires:[{ resource:'meat', qty:2 }],                          reward:{ resource:'gold', qty:12 }, minDay:2 },
+    { id:'ord_mixed_1', requires:[{ resource:'crop', qty:4 }, { resource:'wood', qty:1 }], reward:{ resource:'gold', qty:20 }, minDay:2 },
+    { id:'ord_crop_2',  requires:[{ resource:'crop', qty:6 }],                          reward:{ resource:'gold', qty:24 }, minDay:3 }
+  ];
+  var MAX_ORDERS = 3;
+  var ORDER_REFILL_DELAY = 2; // days between a delivered order and a new one appearing — avoids a grindy always-full board
+  var ORDER_RES_LABEL = { crop:'nông sản', meat:'thịt', wood:'gỗ trôi dạt', gold:'vàng' };
+
+  function orderResourceIcon(resource){
+    if(resource === 'gold') return '<img class="res-icon-img" src="assets/ui/ui-hud-resource-chips-coin.png" alt="">';
+    return '<svg viewBox="0 0 24 24" class="res-icon-img">' + ITEM_ART[resource]() + '</svg>';
+  }
+  function eligibleOrderTemplates(day, excludeIds){
+    return ORDER_TEMPLATES.filter(function(t){ return t.minDay <= day && excludeIds.indexOf(t.id) === -1; });
+  }
+  function instantiateOrder(tpl){
+    return { id: tpl.id + '_' + Date.now() + '_' + rand(0, 999), templateId: tpl.id, requires: tpl.requires, reward: tpl.reward };
+  }
+  function seedInitialOrders(day){
+    return eligibleOrderTemplates(day, []).slice(0, MAX_ORDERS).map(instantiateOrder);
+  }
+  function refillOrders(){
+    if(state.orders.length >= MAX_ORDERS || state.day < state.nextOrderRefillDay) return;
+    var activeTemplateIds = state.orders.map(function(o){ return o.templateId; });
+    var pool = eligibleOrderTemplates(state.day, activeTemplateIds);
+    if(!pool.length) pool = eligibleOrderTemplates(state.day, []); // every eligible template already on the board — allow a repeat
+    if(!pool.length) return;
+    state.orders.push(instantiateOrder(pool[rand(0, pool.length - 1)]));
+    state.nextOrderRefillDay = state.day + ORDER_REFILL_DELAY;
+  }
+  function orderHasEnough(order){
+    return order.requires.every(function(r){ return (state.inv[r.resource] || 0) >= r.qty; });
+  }
+  function orderMissingText(order){
+    return order.requires
+      .filter(function(r){ return (state.inv[r.resource] || 0) < r.qty; })
+      .map(function(r){ return (r.qty - (state.inv[r.resource] || 0)) + ' ' + ORDER_RES_LABEL[r.resource]; })
+      .join(', ');
+  }
+
   function rand(a,b){ return Math.floor(Math.random()*(b-a+1))+a; }
   function escapeHtml(s){ return String(s).replace(/[&<>"']/g, function(c){ return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]; }); }
 
@@ -515,6 +581,7 @@
              {stage:0,watered:false},{stage:0,watered:false},{stage:0,watered:false}],
       inv: { crop:0, meat:0, wood:0 },
       merchantAvailable: false, nextMerchantDay: 3,
+      orders: seedInitialOrders(1), nextOrderRefillDay: 1,
       encounter: null, claimedDay: 0, seenTutorial: false, goalReached: false, log: []
     };
   }
@@ -910,6 +977,58 @@
     toast('Đã bán, nhận +' + total + ' vàng.');
   }
 
+  /* ---------------- order board ---------------- */
+  document.getElementById('goal-bar').addEventListener('click', function(){ openModal(orderBoardTemplate()); });
+  function orderBoardTemplate(){
+    var cards = state.orders.length
+      ? state.orders.map(orderCardHtml).join('')
+      : '<p class="muted">Bảng đơn hàng đang trống — quay lại sau vài ngày.</p>';
+    return '<div class="modal">' +
+      '<button class="modal-close" data-close type="button">✕</button>' +
+      '<img class="market-banner" src="assets/ui/ui-screen-order-board-banner.jpg" alt="">' +
+      '<h3>Bảng đơn hàng đảo</h3>' +
+      '<p class="muted">Giao đúng tài nguyên yêu cầu để đổi lấy vàng.</p>' +
+      '<div class="order-list">' + cards + '</div>' +
+    '</div>';
+  }
+  function orderCardHtml(order){
+    var has = orderHasEnough(order);
+    var reqHtml = order.requires.map(function(r){
+      var short = (state.inv[r.resource] || 0) < r.qty ? ' short' : '';
+      return '<span class="order-req-chip' + short + '">' + orderResourceIcon(r.resource) + '<b>' + r.qty + '</b> ' + ORDER_RES_LABEL[r.resource] + '</span>';
+    }).join('');
+    var rewardHtml = '<span class="order-reward-chip">' + orderResourceIcon(order.reward.resource) + '+' + order.reward.qty + ' ' + ORDER_RES_LABEL[order.reward.resource] + '</span>';
+    return '<div class="order-card" data-order="' + order.id + '">' +
+      '<div class="order-row">' + reqHtml + '<span class="order-arrow">→</span>' + rewardHtml + '</div>' +
+      '<button class="m-btn primary order-deliver" data-order="' + order.id + '" type="button"' + (has ? '' : ' disabled') + '>' +
+        (has ? 'Giao hàng' : 'Chưa đủ hàng') +
+      '</button>' +
+      (has ? '' : '<span class="order-hint">Cần thêm: ' + orderMissingText(order) + '</span>') +
+    '</div>';
+  }
+  function fulfillOrder(orderId){
+    var order = state.orders.find(function(o){ return o.id === orderId; });
+    if(!order || !orderHasEnough(order)) return;
+    order.requires.forEach(function(r){ state.inv[r.resource] -= r.qty; });
+    if(order.reward.resource === 'gold'){ state.gold += order.reward.qty; }
+    else { state.inv[order.reward.resource] = (state.inv[order.reward.resource] || 0) + order.reward.qty; }
+    addLog('Bạn đã giao một đơn hàng, nhận +' + order.reward.qty + ' ' + ORDER_RES_LABEL[order.reward.resource] + '.');
+    var cardEl = modalRoot.querySelector('.order-card[data-order="' + orderId + '"]');
+    if(cardEl) cardEl.classList.add('order-complete');
+    toast('Đã giao đơn hàng! +' + order.reward.qty + ' ' + ORDER_RES_LABEL[order.reward.resource] + '.');
+    setTimeout(function(){
+      var idx = state.orders.findIndex(function(o){ return o.id === orderId; });
+      if(idx >= 0) state.orders.splice(idx, 1);
+      state.nextOrderRefillDay = Math.max(state.nextOrderRefillDay, state.day + ORDER_REFILL_DELAY);
+      save(); renderHud(); checkGoal();
+      openModal(orderBoardTemplate());
+    }, 320);
+  }
+  modalRoot.addEventListener('click', function(e){
+    var btn = e.target.closest('.order-deliver');
+    if(btn && !btn.disabled) fulfillOrder(btn.getAttribute('data-order'));
+  });
+
   /* ---------------- journal / end day ---------------- */
   document.getElementById('btn-journal').addEventListener('click', function(){ openModal(journalTemplate()); bindJournal(); });
   function journalTemplate(){
@@ -938,6 +1057,7 @@
       addLog('Bạn thấy một cánh buồm lạ ghé vào Vịnh buôn bán...');
     }
     if(Math.random() < 0.35) addLog(FLAVORS[Math.floor(Math.random() * FLAVORS.length)]);
+    refillOrders();
     save(); closeModal(); renderAll(); checkGoal();
   }
   function checkGoal(){
@@ -984,6 +1104,8 @@
 
   /* ---------------- boot ---------------- */
   state = load() || defaultState();
+  if(!Array.isArray(state.orders)) state.orders = seedInitialOrders(state.day); // migrate saves from before the order board
+  if(typeof state.nextOrderRefillDay !== 'number') state.nextOrderRefillDay = state.day;
   renderAll();
 })();
 
