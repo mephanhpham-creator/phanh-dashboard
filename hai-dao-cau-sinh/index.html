@@ -323,6 +323,9 @@
   .market-card-owned{font-size:0.66rem;color:var(--turquoise-deep);font-weight:700;}
   .market-card.unowned{opacity:.5;}
   .craft-card-head{display:flex;align-items:center;gap:8px;font:700 0.86rem "Baloo 2";color:var(--ink);}
+  .collection-group-label{font:700 0.82rem "Baloo 2";color:var(--ink);margin:2px 0 -2px;}
+  .pet-lock-row{display:flex;align-items:center;justify-content:center;gap:4px;}
+  .pet-lock-label{font-size:0.64rem;color:var(--ink-soft);font-weight:700;}
 
   .journal-line{font-size:0.82rem;line-height:1.5;font-style:italic;}
   .journal-line.muted{color:var(--ink-soft);font-style:normal;}
@@ -512,6 +515,22 @@
   // spec allows adding, kept to the existing palette (soft lavender-white, driftwood outline).
   function artPearl(){ return svg('0 0 24 24', '<circle cx="12" cy="12" r="9" fill="#E7E0F0" stroke="#8A6A45" stroke-width="1.3"/><ellipse cx="9" cy="8.6" rx="2.4" ry="1.6" fill="#ffffff" opacity="0.85"/>'); }
   var ITEM_ART = { crop: artCrop, meat: artMeat, wood: artWood, pearl: artPearl };
+
+  // Animal sanctuary preview (Chapter 2, not yet unlockable) — flat gray-stone silhouettes,
+  // since none of these pets have any existing art and every card here is locked anyway.
+  function artLock(){ return svg('0 0 24 24', '<rect x="5" y="11" width="14" height="10" rx="2.5" fill="#9C948A" stroke="#6B6259" stroke-width="1.2"/><path d="M8 11V8a4 4 0 0 1 8 0v3" fill="none" stroke="#6B6259" stroke-width="1.8" stroke-linecap="round"/><circle cx="12" cy="15.5" r="1.6" fill="#6B6259"/>'); }
+  function artChick(){ return svg('0 0 24 24', '<ellipse cx="12" cy="14" rx="7" ry="6" fill="#B9AFA0"/><circle cx="12" cy="7" r="4" fill="#B9AFA0"/><path d="M12 7l3.4 1.3-3.4 1Z" fill="#8F8575"/>'); }
+  function artCow(){ return svg('0 0 24 24', '<ellipse cx="12" cy="14" rx="8" ry="6" fill="#B9AFA0"/><circle cx="7" cy="8" r="2.4" fill="#B9AFA0"/><circle cx="17" cy="8" r="2.4" fill="#B9AFA0"/><ellipse cx="9" cy="15" rx="1.6" ry="1.2" fill="#8F8575"/><ellipse cx="15" cy="12" rx="1.3" ry="1" fill="#8F8575"/>'); }
+  function artSheep(){ return svg('0 0 24 24', '<circle cx="8" cy="10" r="4" fill="#B9AFA0"/><circle cx="12" cy="8" r="4.4" fill="#B9AFA0"/><circle cx="16" cy="10" r="4" fill="#B9AFA0"/><ellipse cx="12" cy="15" rx="7" ry="5" fill="#B9AFA0"/><circle cx="12" cy="14" r="2.2" fill="#8F8575"/>'); }
+  function artSlime(){ return svg('0 0 24 24', '<path d="M12 4c4 4 7 8 7 11a7 7 0 0 1-14 0c0-3 3-7 7-11Z" fill="#B9AFA0"/><circle cx="10" cy="15" r="1.1" fill="#6B6259"/><circle cx="14" cy="15" r="1.1" fill="#6B6259"/>'); }
+  function artCat(){ return svg('0 0 24 24', '<path d="M6 5l2 5M18 5l-2 5" stroke="#B9AFA0" stroke-width="2.4" stroke-linecap="round"/><circle cx="12" cy="13" r="7" fill="#B9AFA0"/><circle cx="9" cy="12" r="0.9" fill="#6B6259"/><circle cx="15" cy="12" r="0.9" fill="#6B6259"/>'); }
+  var PET_PREVIEW = [
+    { name:'Gà con',          icon:artChick, lockText:'Hẹn gặp ở chương sau' },
+    { name:'Bò sữa',          icon:artCow,   lockText:'Chưa mở khoá' },
+    { name:'Cừu bông',        icon:artSheep, lockText:'Sắp xuất hiện' },
+    { name:'Bé Slime thạch',  icon:artSlime, lockText:'Đang say ngủ...' },
+    { name:'Mèo mướp',        icon:artCat,   lockText:'Còn đang lang thang' }
+  ];
   var ITEM_NAMES = { crop:'nông sản', meat:'thịt', wood:'gỗ trôi dạt' };
   var RATES = { crop:3, meat:4, wood:2 };
 
@@ -1101,7 +1120,7 @@
 
   // "đã sở hữu" is one shared list regardless of how each piece was acquired (bought or crafted)
   function collectionTabHtml(){
-    var cards = MARKET_ITEMS.map(function(item){
+    var decorCards = MARKET_ITEMS.map(function(item){
       var owned = state.decorations[item.id] || 0;
       return '<div class="market-card' + (owned ? '' : ' unowned') + '">' +
         '<span class="market-card-icon">' + orderResourceIcon(item.icon) + '</span>' +
@@ -1109,9 +1128,22 @@
         '<span class="market-card-owned">' + (owned ? 'Đã có ×' + owned : 'Chưa có') + '</span>' +
       '</div>';
     }).join('');
+    // static preview only — no unlock logic, no state, nothing saved; Chapter 2 content
+    var petCards = PET_PREVIEW.map(function(pet){
+      return '<div class="market-card unowned">' +
+        '<span class="market-card-icon">' + petIcon(pet.icon) + '</span>' +
+        '<span class="market-card-name">' + pet.name + '</span>' +
+        '<span class="pet-lock-row">' + petIcon(artLock) + '<span class="pet-lock-label">' + pet.lockText + '</span></span>' +
+      '</div>';
+    }).join('');
     return '<p class="muted">Đồ trang trí đã sở hữu — mua ở Chợ hoặc làm ở Xưởng chế tạo. Chưa đặt lên đảo được ở bản này.</p>' +
-      '<div class="market-grid">' + cards + '</div>';
+      '<h4 class="collection-group-label">Đồ trang trí</h4>' +
+      '<div class="market-grid">' + decorCards + '</div>' +
+      '<img class="market-banner" src="assets/ui/ui-screen-animal-sanctuary-banner.jpg" alt="">' +
+      '<h4 class="collection-group-label">Thú nuôi</h4>' +
+      '<div class="market-grid">' + petCards + '</div>';
   }
+  function petIcon(fn){ return '<svg viewBox="0 0 24 24" class="res-icon-img">' + fn() + '</svg>'; }
 
   modalRoot.addEventListener('click', function(e){
     if(e.target.closest('#btn-sell')){ sellAll(); return; }
