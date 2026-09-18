@@ -116,8 +116,7 @@
     background:var(--surface);border:2px solid var(--surface-border);border-radius:18px;
     padding:6px 8px;display:flex;align-items:center;gap:8px;color:var(--surface-ink);
   }
-  .hud-avatar{width:34px;height:34px;flex:0 0 auto;border-radius:50%;background:var(--turquoise);border:2px solid var(--cream);display:flex;align-items:center;justify-content:center;}
-  .hud-avatar svg{width:60%;height:60%;color:var(--cream);}
+  .hud-avatar{width:34px;height:34px;flex:0 0 auto;border-radius:50%;background:var(--turquoise) center/cover no-repeat;border:2px solid var(--cream);overflow:hidden;}
   .hud-mid{flex:1;min-width:0;display:flex;flex-direction:column;gap:3px;}
   .hud-mid-row{display:flex;justify-content:space-between;gap:6px;font-size:0.74rem;font-weight:600;}
   .hud-mid-row .talent{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
@@ -128,10 +127,14 @@
   .hud-hp svg{width:16px;height:16px;}
   .hud-hp span{font:700 0.62rem "JetBrains Mono",monospace;color:var(--surface-ink);}
 
-  .resource-row{flex:0 0 auto;display:flex;gap:6px;margin:7px 10px 0;}
+  .resource-bar{flex:0 0 auto;display:flex;gap:6px;margin:7px 10px 0;align-items:stretch;}
+  .resource-row{flex:1;display:flex;gap:6px;min-width:0;}
   .res-chip{flex:1;display:flex;align-items:center;justify-content:center;gap:5px;background:var(--card);border:1.5px solid var(--driftwood);border-radius:12px;padding:4px 6px;font-size:0.76rem;font-weight:700;color:var(--ink);position:relative;}
   .res-chip svg{width:16px;height:16px;flex:0 0 auto;}
   .res-chip .gold-chip{color:var(--coral-deep);}
+  .res-icon-img{width:18px;height:18px;flex:0 0 auto;object-fit:contain;}
+  .weather-badge{flex:0 0 auto;aspect-ratio:1/1;width:34px;background:var(--card);border:1.5px solid var(--driftwood);border-radius:12px;display:flex;align-items:center;justify-content:center;}
+  .weather-badge svg{width:60%;height:60%;}
 
   .viewport{
     flex:1;margin:8px 10px 0;border-radius:12px;position:relative;overflow:hidden;
@@ -157,12 +160,14 @@
 
   .goal-bar{
     flex:0 0 auto;margin:8px 10px 0;background:var(--surface);border-radius:12px;padding:6px 10px;
-    display:flex;align-items:center;gap:7px;color:var(--surface-ink);
+    display:flex;align-items:center;gap:7px;color:var(--surface-ink);text-align:left;cursor:pointer;
   }
+  .goal-bar:active{filter:brightness(.96);}
   .goal-bar svg{width:16px;height:16px;flex:0 0 auto;color:var(--coral);}
   .goal-text{flex:1;min-width:0;font-size:0.74rem;line-height:1.25;}
   .goal-track{width:44px;height:6px;border-radius:999px;background:rgba(0,0,0,.15);overflow:hidden;flex:0 0 auto;}
   .goal-fill{height:100%;background:var(--coral);border-radius:999px;}
+  .goal-chevron{flex:0 0 auto;font-size:1rem;line-height:1;color:var(--ink-soft);}
 
   .dock{
     flex:0 0 auto;position:relative;margin-top:10px;height:78px;overflow:visible;
@@ -179,10 +184,10 @@
     background:radial-gradient(circle at 35% 30%,#FFAE6B,var(--coral) 60%,var(--coral-deep) 100%);
     border:3px solid var(--cream);box-shadow:0 6px 14px var(--shadow);z-index:5;
     display:flex;flex-direction:column;align-items:center;justify-content:center;
+    overflow:hidden;position:relative;
   }
-  .dock-cta svg{width:34%;color:#fff;}
-  .dock-cta span{font-family:"Baloo 2";font-size:0.62rem;font-weight:800;color:#fff;margin-top:1px;}
-  .dock-cta small{font-size:0.5rem;color:rgba(255,255,255,.9);}
+  .dock-cta-art{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;border-radius:50%;}
+  .dock-cta small{position:relative;margin-top:auto;margin-bottom:3px;font-size:0.5rem;font-weight:700;color:#fff;background:rgba(74,46,20,.55);padding:1px 6px;border-radius:999px;}
   .dock-cta.locked{opacity:.5;cursor:not-allowed;}
   .dock-cta.shake{animation:shake .3s ease;}
   @keyframes shake{0%,100%{transform:translateX(0)}25%{transform:translateX(-5px)}75%{transform:translateX(5px)}}
@@ -214,15 +219,7 @@
 
   /* ================= CHECK-IN ================= */
   .checkin-head{flex:0 0 auto;text-align:center;font-size:0.86rem;font-weight:700;color:var(--ink);padding:2px 10px 8px;}
-  .checkin-scene{flex:0 0 auto;position:relative;height:26%;overflow:hidden;border-radius:10px;margin:0 10px;}
-  .ci-sky{position:absolute;inset:0;background:linear-gradient(180deg,#BFE4EE,#EAF6EC);}
-  .ci-sun{position:absolute;right:16%;top:18%;width:13%;aspect-ratio:1;border-radius:50%;background:radial-gradient(circle,#fff6d8,var(--sand));}
-  .ci-sea{position:absolute;left:0;right:0;bottom:24%;height:22%;background:#3f8f95;overflow:hidden;}
-  .ci-wave{position:absolute;left:0;right:-120px;bottom:0;height:14px;opacity:.35;background-repeat:repeat-x;background-size:120px 20px;animation:waveMove 6s linear infinite;
-    background-image:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 120 20'><path d='M0 10 Q15 0 30 10 T60 10 T90 10 T120 10 V20 H0 Z' fill='%23ffffff'/></svg>");}
-  @keyframes waveMove{from{background-position-x:0}to{background-position-x:120px}}
-  .ci-shore{position:absolute;left:0;right:0;bottom:0;height:24%;background:var(--sand);}
-  .ci-palm{position:absolute;left:8%;bottom:14%;width:15%;color:var(--driftwood-deep);}
+  .checkin-banner{flex:0 0 auto;width:calc(100% - 20px);margin:0 10px;height:15%;min-height:70px;object-fit:cover;border-radius:10px;}
 
   .checkin-card{
     flex:1;margin:10px;background:var(--card);border:2px solid var(--driftwood);border-radius:14px;
@@ -233,10 +230,14 @@
   .checkin-chest.opening{animation:chestOpen .5s ease;}
   @keyframes chestOpen{0%{transform:scale(1) rotate(0)}40%{transform:scale(1.12) rotate(-6deg)}70%{transform:scale(1.05) rotate(4deg)}100%{transform:scale(1) rotate(0)}}
   .checkin-sub{font-size:0.74rem;color:var(--ink-soft);}
-  .streak-dots{display:flex;gap:6px;margin-top:2px;}
-  .dot{width:10px;height:10px;border-radius:50%;border:1.5px solid var(--line);}
-  .dot.filled{background:var(--turquoise);border-color:var(--turquoise);}
-  .dot.today{border-color:var(--coral);border-width:2px;}
+  .streak-dots{display:flex;gap:4px;margin-top:2px;flex-wrap:wrap;justify-content:center;}
+  .week-chip{display:flex;flex-direction:column;align-items:center;gap:2px;width:36px;padding:4px 2px;border-radius:9px;border:1.5px solid var(--line);background:var(--paper-deep);opacity:.5;}
+  .week-chip .res-icon-img{width:16px;height:16px;}
+  .week-chip .week-chip-day{font:700 0.56rem "JetBrains Mono",monospace;color:var(--ink-soft);}
+  .week-chip.filled{opacity:1;border-color:var(--turquoise);}
+  .week-chip.today{opacity:1;border-color:var(--coral);border-width:2px;box-shadow:0 0 0 2px rgba(250,130,49,.18);}
+  .week-chip.special{border-color:var(--sand);}
+  .week-chip.special.filled,.week-chip.special.today{border-width:2px;box-shadow:0 0 0 2px rgba(244,208,111,.4);}
 
   .cta-pill{
     flex:0 0 auto;margin:0 10px calc(env(safe-area-inset-bottom,0px) + 12px);height:46px;border-radius:23px;
@@ -245,6 +246,8 @@
     display:flex;align-items:center;justify-content:center;gap:8px;
   }
   .cta-pill.secondary{background:var(--card);color:var(--ink);border-color:var(--driftwood);}
+  .cta-pill.pulse{animation:pillPulse 1.6s ease-in-out infinite;}
+  @keyframes pillPulse{0%,100%{transform:scale(1);box-shadow:0 0 0 0 rgba(250,130,49,.35);}50%{transform:scale(1.035);box-shadow:0 0 0 8px rgba(250,130,49,0);}}
 
   /* ================= MODALS (combat / inventory / journal / tutorial / reset) ================= */
   .modal-backdrop{
@@ -288,20 +291,76 @@
   .m-btn.secondary{background:var(--turquoise);color:#fff;border:2px solid var(--turquoise-deep);}
   .m-btn.ghost{background:var(--paper-deep);color:var(--ink);border:2px solid var(--line);}
 
+  .market-banner{width:100%;height:64px;object-fit:cover;border-radius:12px;margin-top:-2px;}
+
   .item-row{display:flex;gap:8px;flex-wrap:wrap;}
   .item-chip{display:flex;flex-direction:column;align-items:center;gap:2px;background:var(--paper-deep);border-radius:10px;padding:8px 10px;min-width:64px;flex:1;}
   .item-chip svg{width:26px;height:26px;}
   .item-count{font:700 0.78rem "JetBrains Mono",monospace;}
   .muted{color:var(--ink-soft);font-size:0.8rem;}
 
+  /* ---- order board ---- */
+  .order-list{display:flex;flex-direction:column;gap:10px;}
+  .order-card{background:var(--paper-deep);border:2px solid var(--driftwood);border-radius:12px;padding:10px 12px;display:flex;flex-direction:column;gap:8px;}
+  .order-row{display:flex;align-items:center;gap:6px;flex-wrap:wrap;}
+  .order-req-chip{display:flex;align-items:center;gap:4px;background:var(--card);border:1.5px solid var(--line);border-radius:999px;padding:3px 9px;font-size:0.76rem;font-weight:700;color:var(--ink);}
+  .order-req-chip.short{border-color:var(--coral);color:var(--coral-deep);}
+  .order-arrow{color:var(--ink-soft);font-weight:700;flex:0 0 auto;}
+  .order-reward-chip{display:flex;align-items:center;gap:4px;font-size:0.8rem;font-weight:700;color:var(--coral-deep);margin-left:auto;}
+  .order-hint{font-size:0.7rem;color:var(--coral-deep);}
+  .order-complete{animation:orderComplete .32s ease forwards;}
+  @keyframes orderComplete{0%{opacity:1;transform:scale(1);}100%{opacity:0;transform:scale(.92);}}
+
+  /* ---- balo tabs + island market (Pearls) ---- */
+  .modal-header-row{display:flex;align-items:center;justify-content:space-between;gap:8px;}
+  .pearl-balance{display:flex;align-items:center;gap:4px;font:700 0.82rem "JetBrains Mono",monospace;color:var(--ink);background:var(--paper-deep);border:1.5px solid var(--line);border-radius:999px;padding:3px 10px;flex:0 0 auto;}
+  .tab-row{display:flex;gap:6px;background:var(--paper-deep);border-radius:999px;padding:3px;}
+  .tab-btn{flex:1;text-align:center;padding:7px 0;border-radius:999px;font:700 0.8rem "Baloo 2";color:var(--ink-soft);}
+  .tab-btn.active{background:var(--turquoise);color:#fff;}
+  .market-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:10px;}
+  .market-card{background:var(--paper-deep);border:2px solid var(--driftwood);border-radius:12px;padding:10px 8px;display:flex;flex-direction:column;align-items:center;gap:5px;text-align:center;}
+  .market-card-icon{width:30px;height:30px;}
+  .market-card-icon .res-icon-img{width:28px;height:28px;}
+  .market-card-name{font:700 0.76rem "Baloo 2";color:var(--ink);line-height:1.2;min-height:2.1em;}
+  .market-card-price{display:flex;align-items:center;gap:3px;font:700 0.74rem "JetBrains Mono",monospace;color:var(--coral-deep);}
+  .market-card-owned{font-size:0.66rem;color:var(--turquoise-deep);font-weight:700;}
+  .market-card.unowned{opacity:.5;}
+  .craft-card-head{display:flex;align-items:center;gap:8px;font:700 0.86rem "Baloo 2";color:var(--ink);}
+  .collection-group-label{font:700 0.82rem "Baloo 2";color:var(--ink);margin:2px 0 -2px;}
+  .pet-lock-row{display:flex;align-items:center;justify-content:center;gap:4px;}
+  .pet-lock-label{font-size:0.64rem;color:var(--ink-soft);font-weight:700;}
+
   .journal-line{font-size:0.82rem;line-height:1.5;font-style:italic;}
   .journal-line.muted{color:var(--ink-soft);font-style:normal;}
   .journal-day{font-style:normal;font:700 0.7rem "JetBrains Mono",monospace;color:var(--ink-soft);margin-right:4px;}
   .journal-list{display:flex;flex-direction:column;gap:6px;max-height:180px;overflow-y:auto;background:var(--paper-deep);border-radius:10px;padding:10px;}
 
-  .tut-steps{display:flex;flex-direction:column;gap:8px;}
-  .tut-step{display:flex;gap:8px;align-items:flex-start;font-size:0.82rem;line-height:1.4;}
-  .tut-num{flex:0 0 auto;width:20px;height:20px;border-radius:50%;background:var(--coral);color:#fff;font:700 0.7rem "JetBrains Mono",monospace;display:flex;align-items:center;justify-content:center;}
+  /* ---- onboarding coachmarks (first launch only) ---- */
+  #tut-overlay{position:absolute;inset:0;z-index:70;}
+  .tut-highlight{
+    position:absolute;border-radius:14px;border:2.5px solid var(--coral);
+    box-shadow:0 0 0 9999px rgba(20,14,8,.62);
+    transition:left .25s ease, top .25s ease, width .25s ease, height .25s ease;
+    pointer-events:none;
+  }
+  .tut-highlight[hidden]{display:none;}
+  .tut-card{
+    position:absolute;left:14px;right:14px;
+    background:var(--card);border:2px solid var(--driftwood);border-radius:14px;
+    padding:12px 14px;box-shadow:0 10px 24px var(--shadow);
+    display:flex;flex-direction:column;gap:8px;
+    transition:top .25s ease;
+  }
+  .tut-step-label{font:700 0.62rem "JetBrains Mono",monospace;letter-spacing:0.08em;text-transform:uppercase;color:var(--coral-deep);}
+  .tut-text{font-size:0.86rem;line-height:1.5;color:var(--ink);margin:0;}
+  .tut-actions{display:flex;justify-content:space-between;align-items:center;gap:8px;}
+  .tut-skip{font-size:0.78rem;color:var(--ink-soft);text-decoration:underline;background:none;border:none;padding:4px;cursor:pointer;}
+  .tut-next{flex:0 0 auto;min-width:110px;}
+  .gender-pick-row{display:flex;gap:10px;}
+  .gender-pick{flex:1;display:flex;flex-direction:column;align-items:center;gap:6px;padding:8px;border-radius:14px;border:2px solid var(--driftwood);background:var(--card);}
+  .gender-pick:active{background:var(--paper-deep);}
+  .gender-pick img{width:100%;aspect-ratio:1/1;object-fit:cover;border-radius:10px;}
+  .gender-pick span{font:700 0.84rem "Baloo 2";color:var(--ink);}
 
   #toast{
     position:fixed;left:50%;bottom:18px;transform:translate(-50%,12px);
@@ -352,13 +411,7 @@
   <!-- ============== CHECK-IN SCREEN ============== -->
   <section class="screen screen-checkin" id="screen-checkin" hidden>
     <div class="checkin-head" id="checkin-daylabel">Ngày 1 · Bình minh</div>
-    <div class="checkin-scene">
-      <div class="ci-sky"><div class="ci-sun"></div></div>
-      <div class="ci-sea"><div class="ci-wave"></div></div>
-      <div class="ci-shore">
-        <svg class="ci-palm" viewBox="0 0 60 80" fill="none"><path d="M32 78c0-24 2-40 6-52" stroke="currentColor" stroke-width="4" fill="none" stroke-linecap="round"/><path d="M38 26c-10-6-20-6-28-2 8 8 18 9 28 2Z" fill="currentColor"/><path d="M38 26c-4-10-2-18 4-24 6 8 6 17 -4 24Z" fill="currentColor"/><path d="M38 26c10-6 20-6 28-2-8 8-18 9-28 2Z" fill="currentColor"/></svg>
-      </div>
-    </div>
+    <img class="checkin-banner" src="assets/ui/ui-modal-daily-bonus-banner.jpg" alt="">
     <div class="checkin-card">
       <p class="checkin-line" id="checkin-line">Sóng đêm dạt vào 1 chiếc rương</p>
       <div class="checkin-chest" id="checkin-chest">
@@ -371,13 +424,13 @@
       <p class="checkin-sub" id="checkin-sub">Chạm để mở — phần thưởng ngày 1</p>
       <div class="streak-dots" id="streak-dots" aria-hidden="true"></div>
     </div>
-    <button class="cta-pill" id="btn-open-chest" type="button">Mở rương</button>
+    <button class="cta-pill pulse" id="btn-open-chest" type="button">Nhận quà</button>
   </section>
 
   <!-- ============== HOMESTEAD SCREEN ============== -->
   <section class="screen screen-homestead" id="screen-homestead" hidden>
     <div class="hud-topbar">
-      <div class="hud-avatar"><svg viewBox="0 0 24 24" fill="currentColor"><circle cx="12" cy="8" r="4"/><path d="M4 20c1.5-5 5-7 8-7s6.5 2 8 7Z"/></svg></div>
+      <div class="hud-avatar" id="hud-avatar"></div>
       <div class="hud-mid">
         <div class="hud-mid-row"><span class="talent" id="hud-talent-label">—</span><span class="day" id="hud-day-label">Ngày 1</span></div>
         <div class="stamina-bar"><div class="stamina-fill" id="hud-energy-fill" style="width:100%"></div></div>
@@ -388,7 +441,10 @@
       </div>
     </div>
 
-    <div class="resource-row" id="resource-row"></div>
+    <div class="resource-bar">
+      <div class="resource-row" id="resource-row"></div>
+      <div class="weather-badge" id="weather-badge" title="Thời tiết"></div>
+    </div>
 
     <div class="viewport" id="viewport">
       <svg class="vp-palm left" viewBox="0 0 60 80" fill="none"><path d="M32 78c0-24 2-40 6-52" stroke="currentColor" stroke-width="4" fill="none" stroke-linecap="round"/><path d="M38 26c-10-6-20-6-28-2 8 8 18 9 28 2Z" fill="currentColor"/><path d="M38 26c-4-10-2-18 4-24 6 8 6 17 -4 24Z" fill="currentColor"/><path d="M38 26c10-6 20-6 28-2-8 8-18 9-28 2Z" fill="currentColor"/></svg>
@@ -396,21 +452,22 @@
       <div class="vp-plots" id="vp-plots"></div>
     </div>
 
-    <div class="goal-bar" id="goal-bar">
+    <button class="goal-bar" id="goal-bar" type="button" title="Bảng đơn hàng đảo">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M3 15h18l-2.5 5h-13L3 15Z" fill="currentColor" stroke="none"/><path d="M12 3v10M12 5l5 3-5 2" stroke-linecap="round" stroke-linejoin="round" fill="none"/></svg>
       <span class="goal-text" id="goal-text">Tích vàng đóng bè · 0/50</span>
       <div class="goal-track"><div class="goal-fill" id="goal-fill" style="width:0%"></div></div>
-    </div>
+      <span class="goal-chevron" aria-hidden="true">›</span>
+    </button>
 
     <div class="dock">
       <button class="dock-btn" id="btn-backpack" title="Balo / Kho" type="button">
         <svg viewBox="0 0 24 24" fill="currentColor"><rect x="5" y="8" width="14" height="13" rx="3"/><rect x="8" y="4" width="8" height="6" rx="2"/></svg>
         <span class="badge-dot" id="backpack-badge" hidden></span>
       </button>
-      <button class="dock-btn" id="btn-craft" title="Chế tạo / Xây dựng" type="button"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M14 4l6 6-3 3-6-6Z" fill="currentColor" stroke="none"/><path d="M12.5 8.5 4 17l3 3 8.5-8.5"/></svg></button>
+      <button class="dock-btn" id="btn-craft" title="Chế tạo" type="button"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M14 4l6 6-3 3-6-6Z" fill="currentColor" stroke="none"/><path d="M12.5 8.5 4 17l3 3 8.5-8.5"/></svg></button>
       <button class="dock-cta" id="cta-sail" title="Ra Khơi" type="button">
-        <svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="1.6"><circle cx="12" cy="12" r="8"/><path d="M12 4v4M12 16v4M4 12h4M16 12h4M6.5 6.5l3 3M14.5 14.5l3 3M17.5 6.5l-3 3M9.5 14.5l-3 3"/><circle cx="12" cy="12" r="2" fill="#fff" stroke="none"/></svg>
-        <span>RA KHƠI</span><small id="cta-cost">−2 sức</small>
+        <img class="dock-cta-art" src="assets/ui/ui-hud-cta-ra-khoi-crop.jpg" alt="Ra Khơi">
+        <small id="cta-cost">−2 sức</small>
       </button>
       <button class="dock-btn" id="btn-journal" title="Sổ tay / Nhật ký" type="button"><svg viewBox="0 0 24 24" fill="currentColor"><rect x="5" y="4" width="14" height="17" rx="2"/><line x1="8" y1="9" x2="16" y2="9" stroke="#8B5A2B" stroke-width="1.4"/><line x1="8" y1="13" x2="16" y2="13" stroke="#8B5A2B" stroke-width="1.4"/></svg></button>
       <button class="dock-btn" id="btn-friends" title="Hải âu đưa thư / Bạn bè" type="button"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M2 14c4-6 8-2 10 0 2-2 6-6 10 0-5 1-7 4-10 7-3-3-5-6-10-7Z"/></svg></button>
@@ -431,8 +488,7 @@
   var ICONS = {
     sword: '<svg viewBox="0 0 24 24" fill="none"><path d="M14 3 21 10l-2 2-7-7 2-2Z" fill="currentColor"/><path d="M12.5 11.5 4 20l-1.5-1.5L11 10l1.5 1.5Z" fill="currentColor"/><path d="M2 22l2.5-2.5" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg>',
     shield: '<svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 2 4 5v6c0 5 3.4 8.7 8 11 4.6-2.3 8-6 8-11V5l-8-3Z"/></svg>',
-    boat: '<svg viewBox="0 0 24 24" fill="none"><path d="M3 15h18l-2.5 5h-13L3 15Z" fill="currentColor"/><path d="M12 3v10M12 5l5 3-5 2" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" fill="none"/></svg>',
-    coin: '<svg viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="9" fill="currentColor"/><circle cx="12" cy="12" r="5.4" fill="none" stroke="var(--card)" stroke-width="1.4"/></svg>'
+    boat: '<svg viewBox="0 0 24 24" fill="none"><path d="M3 15h18l-2.5 5h-13L3 15Z" fill="currentColor"/><path d="M12 3v10M12 5l5 3-5 2" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" fill="none"/></svg>'
   };
 
   function svg(vb, inner){ return '<svg viewBox="' + vb + '" fill="none">' + inner + '</svg>'; }
@@ -466,9 +522,43 @@
   function artCrop(){ return svg('0 0 24 24', '<path d="M12 21V9" stroke="#3f7a3a" stroke-width="2" stroke-linecap="round"/><path d="M12 12c0-5-4-7-8-7 1 5 4 8 8 7Z" fill="#4f8f46"/><path d="M12 12c0-5 4-7 8-7-1 5-4 8-8 7Z" fill="#5fa64f"/><path d="M8 18c0-3 1.5-6 4-8 2.5 2 4 5 4 8 0 2.5-1.8 4-4 4s-4-1.5-4-4Z" fill="#e08a2e"/>'); }
   function artMeat(){ return svg('0 0 24 24', '<path d="M9 3c5 0 9 4 9 9 0 4-3 7-6 8l-3 3-2-2 2-3c-2-1-3-3-3-6 0-5 1-9 3-9Z" fill="#a85c3c"/><circle cx="6" cy="19" r="2" fill="#e9d9b0"/>'); }
   function artWood(){ return svg('0 0 24 24', '<rect x="2" y="8" width="20" height="8" rx="4" fill="#8a5a34"/><ellipse cx="4.5" cy="12" rx="2.5" ry="4" fill="#c9a06c"/><ellipse cx="19.5" cy="12" rx="2.5" ry="4" fill="#c9a06c"/>'); }
-  var ITEM_ART = { crop: artCrop, meat: artMeat, wood: artWood };
+  // Pearls has no source art (unlike crop/meat/wood/gold); this is the one simple glyph the
+  // spec allows adding, kept to the existing palette (soft lavender-white, driftwood outline).
+  function artPearl(){ return svg('0 0 24 24', '<circle cx="12" cy="12" r="9" fill="#E7E0F0" stroke="#8A6A45" stroke-width="1.3"/><ellipse cx="9" cy="8.6" rx="2.4" ry="1.6" fill="#ffffff" opacity="0.85"/>'); }
+  var ITEM_ART = { crop: artCrop, meat: artMeat, wood: artWood, pearl: artPearl };
+
+  // Animal sanctuary preview (Chapter 2, not yet unlockable) — flat gray-stone silhouettes,
+  // since none of these pets have any existing art and every card here is locked anyway.
+  function artLock(){ return svg('0 0 24 24', '<rect x="5" y="11" width="14" height="10" rx="2.5" fill="#9C948A" stroke="#6B6259" stroke-width="1.2"/><path d="M8 11V8a4 4 0 0 1 8 0v3" fill="none" stroke="#6B6259" stroke-width="1.8" stroke-linecap="round"/><circle cx="12" cy="15.5" r="1.6" fill="#6B6259"/>'); }
+  function artChick(){ return svg('0 0 24 24', '<ellipse cx="12" cy="14" rx="7" ry="6" fill="#B9AFA0"/><circle cx="12" cy="7" r="4" fill="#B9AFA0"/><path d="M12 7l3.4 1.3-3.4 1Z" fill="#8F8575"/>'); }
+  function artCow(){ return svg('0 0 24 24', '<ellipse cx="12" cy="14" rx="8" ry="6" fill="#B9AFA0"/><circle cx="7" cy="8" r="2.4" fill="#B9AFA0"/><circle cx="17" cy="8" r="2.4" fill="#B9AFA0"/><ellipse cx="9" cy="15" rx="1.6" ry="1.2" fill="#8F8575"/><ellipse cx="15" cy="12" rx="1.3" ry="1" fill="#8F8575"/>'); }
+  function artSheep(){ return svg('0 0 24 24', '<circle cx="8" cy="10" r="4" fill="#B9AFA0"/><circle cx="12" cy="8" r="4.4" fill="#B9AFA0"/><circle cx="16" cy="10" r="4" fill="#B9AFA0"/><ellipse cx="12" cy="15" rx="7" ry="5" fill="#B9AFA0"/><circle cx="12" cy="14" r="2.2" fill="#8F8575"/>'); }
+  function artSlime(){ return svg('0 0 24 24', '<path d="M12 4c4 4 7 8 7 11a7 7 0 0 1-14 0c0-3 3-7 7-11Z" fill="#B9AFA0"/><circle cx="10" cy="15" r="1.1" fill="#6B6259"/><circle cx="14" cy="15" r="1.1" fill="#6B6259"/>'); }
+  function artCat(){ return svg('0 0 24 24', '<path d="M6 5l2 5M18 5l-2 5" stroke="#B9AFA0" stroke-width="2.4" stroke-linecap="round"/><circle cx="12" cy="13" r="7" fill="#B9AFA0"/><circle cx="9" cy="12" r="0.9" fill="#6B6259"/><circle cx="15" cy="12" r="0.9" fill="#6B6259"/>'); }
+  var PET_PREVIEW = [
+    { name:'Gà con',          icon:artChick, lockText:'Hẹn gặp ở chương sau' },
+    { name:'Bò sữa',          icon:artCow,   lockText:'Chưa mở khoá' },
+    { name:'Cừu bông',        icon:artSheep, lockText:'Sắp xuất hiện' },
+    { name:'Bé Slime thạch',  icon:artSlime, lockText:'Đang say ngủ...' },
+    { name:'Mèo mướp',        icon:artCat,   lockText:'Còn đang lang thang' }
+  ];
   var ITEM_NAMES = { crop:'nông sản', meat:'thịt', wood:'gỗ trôi dạt' };
   var RATES = { crop:3, meat:4, wood:2 };
+
+  // Weather badge just mirrors the app's existing data-theme (day/night/storm) —
+  // that cosmetic preview switch is the only "weather" state the engine has;
+  // no 4th state, no new persisted field.
+  function artWeatherSun(){ return svg('0 0 24 24', '<circle cx="12" cy="12" r="5" fill="#F4D06F"/><g stroke="#F4D06F" stroke-width="2" stroke-linecap="round"><path d="M12 2v3M12 19v3M2 12h3M19 12h3M4.9 4.9l2.1 2.1M17 17l2.1 2.1M19.1 4.9 17 7M7 17l-2.1 2.1"/></g>'); }
+  function artWeatherMoon(){ return svg('0 0 24 24', '<path d="M20 14.5A8.5 8.5 0 1 1 9.5 4a7 7 0 0 0 10.5 10.5Z" fill="#B8C4D9"/>'); }
+  function artWeatherStorm(){ return svg('0 0 24 24', '<path d="M6 15a4.5 4.5 0 0 1 .3-9 5.5 5.5 0 0 1 10.6 1.4A4 4 0 0 1 17 15H6Z" fill="#9AA6B5"/><path d="M11 16l-2 4M15 16l-2 4" stroke="#F4D06F" stroke-width="2" stroke-linecap="round"/>'); }
+  var WEATHER_ICONS = { day: artWeatherSun, night: artWeatherMoon, storm: artWeatherStorm };
+  var WEATHER_LABELS = { day: 'Ngày', night: 'Đêm', storm: 'Bão' };
+  function renderWeatherBadge(){
+    var theme = app.getAttribute('data-theme') || 'day';
+    var badge = document.getElementById('weather-badge');
+    badge.innerHTML = '<svg viewBox="0 0 24 24">' + (WEATHER_ICONS[theme] || WEATHER_ICONS.day)() + '</svg>';
+    badge.title = 'Thời tiết: ' + (WEATHER_LABELS[theme] || WEATHER_LABELS.day);
+  }
 
   var MONSTERS = [
     { name:'Heo Rừng', hp:6, dmg:[1,3], reward:{ gold:[3,6], meat:[1,2] } },
@@ -483,6 +573,118 @@
     'Đêm qua bạn mơ về đất liền xa xôi.'
   ];
 
+  /* ---------------- order board ----------------
+     Quantities are sized off the real engine numbers above, not guessed:
+     harvest yield is 1-3 crop/tile (1 + farmer bonus + watered bonus, see
+     tileAction), so 3 crop is reachable from a single good harvest or two
+     average ones. Daily check-in always grants +1 wood, so 2 wood needs
+     just two check-ins. Reward is priced at roughly 1.3-2x the merchant's
+     sell RATES above (merchant isn't always in port; the board always is),
+     paid only in gold — the currency the engine already has. */
+  var ORDER_TEMPLATES = [
+    { id:'ord_crop_1',  requires:[{ resource:'crop', qty:3 }],                          reward:{ resource:'gold', qty:12 }, minDay:1 },
+    { id:'ord_wood_1',  requires:[{ resource:'wood', qty:2 }],                          reward:{ resource:'gold', qty:8 },  minDay:1 },
+    { id:'ord_meat_1',  requires:[{ resource:'meat', qty:2 }],                          reward:{ resource:'gold', qty:12 }, minDay:2 },
+    { id:'ord_mixed_1', requires:[{ resource:'crop', qty:4 }, { resource:'wood', qty:1 }], reward:{ resource:'gold', qty:20 }, minDay:2 },
+    { id:'ord_crop_2',  requires:[{ resource:'crop', qty:6 }],                          reward:{ resource:'gold', qty:24 }, minDay:3 }
+  ];
+  var MAX_ORDERS = 3;
+  var ORDER_REFILL_DELAY = 2; // days between a delivered order and a new one appearing — avoids a grindy always-full board
+  var ORDER_RES_LABEL = { crop:'nông sản', meat:'thịt', wood:'gỗ trôi dạt', gold:'vàng', pearl:'Pearl' };
+
+  /* ---------------- daily check-in reward schedule ----------------
+     7 fixed slots keyed by (day-1)%7, the same streak position the
+     existing dot/chip row already computes — the streak counting itself
+     is untouched. Days 2/3/5 hand over exactly the quantity an order
+     board template asks for (2 wood = ord_wood_1, 3 crop = ord_crop_1,
+     2 meat = ord_meat_1) so claiming nudges the player back to the
+     board with something to deliver immediately. Gold days sit in the
+     10-16 range the old flat 10-15 reward used. Day 7 bundles gold +
+     wood + crop for clearly the biggest total value of the week — the
+     "special gold-bordered card" from the spec — still no new currency. */
+  var WEEKLY_REWARDS = [
+    { gold: 10 },
+    { wood: 2 },
+    { crop: 3 },
+    { gold: 14 },
+    { meat: 2 },
+    { gold: 16 },
+    { gold: 30, wood: 2, crop: 3 }
+  ];
+  function applyReward(reward){
+    Object.keys(reward).forEach(function(k){
+      if(k === 'gold') state.gold += reward[k];
+      else state.inv[k] = (state.inv[k] || 0) + reward[k];
+    });
+  }
+  function rewardText(reward){
+    return Object.keys(reward).map(function(k){ return '+' + reward[k] + ' ' + ORDER_RES_LABEL[k]; }).join(', ');
+  }
+
+  function orderResourceIcon(resource){
+    if(resource === 'gold') return '<img class="res-icon-img" src="assets/ui/ui-hud-resource-chips-coin.png" alt="">';
+    return '<svg viewBox="0 0 24 24" class="res-icon-img">' + ITEM_ART[resource]() + '</svg>';
+  }
+  function eligibleOrderTemplates(day, excludeIds){
+    return ORDER_TEMPLATES.filter(function(t){ return t.minDay <= day && excludeIds.indexOf(t.id) === -1; });
+  }
+  function instantiateOrder(tpl){
+    return { id: tpl.id + '_' + Date.now() + '_' + rand(0, 999), templateId: tpl.id, requires: tpl.requires, reward: tpl.reward };
+  }
+  function seedInitialOrders(day){
+    return eligibleOrderTemplates(day, []).slice(0, MAX_ORDERS).map(instantiateOrder);
+  }
+  function refillOrders(){
+    if(state.orders.length >= MAX_ORDERS || state.day < state.nextOrderRefillDay) return;
+    var activeTemplateIds = state.orders.map(function(o){ return o.templateId; });
+    var pool = eligibleOrderTemplates(state.day, activeTemplateIds);
+    if(!pool.length) pool = eligibleOrderTemplates(state.day, []); // every eligible template already on the board — allow a repeat
+    if(!pool.length) return;
+    state.orders.push(instantiateOrder(pool[rand(0, pool.length - 1)]));
+    state.nextOrderRefillDay = state.day + ORDER_REFILL_DELAY;
+  }
+  // shared by order delivery and crafting — both just check/spend a [{resource,qty}] list
+  function hasEnoughResources(reqs){
+    return reqs.every(function(r){ return (state.inv[r.resource] || 0) >= r.qty; });
+  }
+  function missingResourcesText(reqs){
+    return reqs
+      .filter(function(r){ return (state.inv[r.resource] || 0) < r.qty; })
+      .map(function(r){ return (r.qty - (state.inv[r.resource] || 0)) + ' ' + ORDER_RES_LABEL[r.resource]; })
+      .join(', ');
+  }
+  function orderHasEnough(order){ return hasEnoughResources(order.requires); }
+  function orderMissingText(order){ return missingResourcesText(order.requires); }
+
+  /* ---------------- Pearls + island market decorations ----------------
+     Pearls are a separate rare currency, earned only from the order board
+     (every ORDERS_PER_PEARL-th successful delivery) and spendable only on
+     decorations here — never mixed with gold/wood/crop/meat or any other
+     system. Prices are derived from that source, not guessed: a delivered
+     order needs a fresh board slot, and refillOrders() only opens one new
+     slot every ORDER_REFILL_DELAY (2) days, so a player delivering as fast
+     as the board restocks nets at most ~7/2 = 3.5 orders/week, i.e.
+     ~3.5/ORDERS_PER_PEARL ≈ 1.17 Pearls/week. At that rate the 1-Pearl item
+     clears in ~6 days (~1 week, matching the spec), and the 8-Pearl item
+     takes ~7 weeks — a genuine long-term goal. */
+  var ORDERS_PER_PEARL = 3;
+  /* craft: raw-material recipe for the crafting workshop (below). Only 3 of the 5 items get
+     one — the rest stay Pearls-only, keeping "fast/convenient" (Pearls) and "costs farm effort"
+     (crafting) as genuinely different paths. Quantities are reused straight from ORDER_TEMPLATES
+     above (3 crop = ord_crop_1, 2 wood = ord_wood_1, 2 meat = ord_meat_1) rather than invented. */
+  var MARKET_ITEMS = [
+    // repeatable: true for items you'd plausibly want several of once placement exists
+    // (pots/lanterns/mats lining a path); false for one-off centerpiece pieces.
+    { id:'dec_flowerpot',   name:'Chậu hoa',            price:1, icon:'crop', repeatable:true,
+      craft:[{ resource:'crop', qty:3 }] },
+    { id:'dec_picnicchair', name:'Ghế dã ngoại',        price:2, icon:'wood', repeatable:false,
+      craft:[{ resource:'wood', qty:2 }, { resource:'meat', qty:2 }] },
+    { id:'dec_lantern',     name:'Đèn lồng sân vườn',   price:3, icon:'wood', repeatable:true,
+      craft:[{ resource:'wood', qty:2 }, { resource:'crop', qty:1 }] },
+    { id:'dec_grassmat',    name:'Thảm cỏ trang trí',   price:5, icon:'crop', repeatable:true },
+    { id:'dec_fountain',    name:'Đài phun nước mini',  price:8, icon:'gold', repeatable:false }
+  ];
+
   function rand(a,b){ return Math.floor(Math.random()*(b-a+1))+a; }
   function escapeHtml(s){ return String(s).replace(/[&<>"']/g, function(c){ return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]; }); }
 
@@ -490,11 +692,14 @@
   var state;
   function defaultState(){
     return {
-      day: 1, energy: 10, hp: 10, gold: 0, talent: null,
+      day: 1, energy: 10, hp: 10, gold: 0, pearls: 0, talent: null,
+      gender: 'nam', // overwritten by the Day-1 gender pick (first step of the onboarding tutorial below)
+      ordersDelivered: 0, decorations: {},
       farm: [{stage:0,watered:false},{stage:0,watered:false},{stage:0,watered:false},
              {stage:0,watered:false},{stage:0,watered:false},{stage:0,watered:false}],
       inv: { crop:0, meat:0, wood:0 },
       merchantAvailable: false, nextMerchantDay: 3,
+      orders: seedInitialOrders(1), nextOrderRefillDay: 1,
       encounter: null, claimedDay: 0, seenTutorial: false, goalReached: false, log: []
     };
   }
@@ -540,6 +745,7 @@
       var name = btn.getAttribute('data-theme-btn');
       app.setAttribute('data-theme', name);
       document.querySelectorAll('.theme-btn').forEach(function(b){ b.classList.toggle('active', b === btn); });
+      renderWeatherBadge();
     });
   });
   document.getElementById('btn-reset').addEventListener('click', function(){
@@ -585,47 +791,133 @@
       ? 'Ngày 1: Bạn vỡ đất tìm giống. Thiên Phú Nông Dân thức tỉnh.'
       : 'Ngày 1: Bạn mài vũ khí tự vệ. Thiên Phú Chiến Binh thức tỉnh.');
     save();
-    state.seenTutorial ? renderAll() : openModal(tutorialTemplate());
+    renderAll();
   }
   document.getElementById('choice-farmer').addEventListener('click', function(){ chooseTalent('farmer'); });
   document.getElementById('choice-warrior').addEventListener('click', function(){ chooseTalent('warrior'); });
 
-  function tutorialTemplate(){
-    return '<div class="modal center">' +
-      '<h3>Bắt đầu từ đâu?</h3>' +
-      '<div class="tut-steps">' +
-        '<div class="tut-step"><span class="tut-num">1</span>Chạm ô đất trống trong ruộng để khai hoang, gieo hạt, rồi tưới nước.</div>' +
-        '<div class="tut-step"><span class="tut-num">2</span>Chờ cây lớn qua vài lượt "Nghỉ ngơi — Qua ngày" (trong Sổ tay), rồi chạm để thu hoạch.</div>' +
-        '<div class="tut-step"><span class="tut-num">3</span>Nhấn <b>RA KHƠI</b> để khám phá hoang dã — kiếm vàng, thịt, gỗ (cẩn thận quái vật!).</div>' +
-        '<div class="tut-step"><span class="tut-num">4</span>Mở <b>Balo</b> để bán tài nguyên cho thương nhân mỗi khi thuyền buôn ghé Vịnh.</div>' +
-      '</div>' +
-      '<div class="modal-actions"><button class="m-btn primary" id="tut-done" type="button">Đã hiểu</button></div>' +
-    '</div>';
+  /* ---------------- onboarding: sequential coachmarks (first launch only) ---------------- */
+  var TUT_STEPS = [
+    { target: '#vp-plots .plot', text: 'Chạm vào một ô đất để khai hoang, gieo hạt rồi tưới nước.' },
+    { target: '#btn-journal', text: 'Mở Sổ tay và chọn "Nghỉ ngơi — Qua ngày" để cây lớn dần.' },
+    { target: '#vp-plots .plot', text: 'Khi ô đất sáng lên (sẵn sàng), chạm lại để thu hoạch.' },
+    { target: '#cta-sail', text: 'Nhấn RA KHƠI để khám phá hoang dã — kiếm vàng, thịt, gỗ!' }
+  ];
+  var tutStep = 0;
+  var tutGenderChosen = false; // in-memory only for this one run; gated by state.seenTutorial below, no parallel flag
+  function startTutorial(){ tutStep = 0; tutGenderChosen = false; showTutorialStep(); }
+  function genderStepHtml(){
+    return '<span class="tut-step-label">Trước khi bắt đầu</span>' +
+      '<p class="tut-text">Bạn muốn nhân vật của mình là?</p>' +
+      '<div class="gender-pick-row">' +
+        '<button class="gender-pick" data-gender="nam" type="button">' +
+          '<img src="assets/ui/ui-hud-player-profile-nam.jpg" alt="Nam"><span>Nam</span>' +
+        '</button>' +
+        '<button class="gender-pick" data-gender="nu" type="button">' +
+          '<img src="assets/ui/ui-hud-player-profile-nu.jpg" alt="Nữ"><span>Nữ</span>' +
+        '</button>' +
+      '</div>';
+  }
+  function showTutorialStep(){
+    var overlay = document.getElementById('tut-overlay');
+    if(!overlay){
+      overlay = document.createElement('div');
+      overlay.id = 'tut-overlay';
+      app.appendChild(overlay);
+    }
+
+    if(!tutGenderChosen){
+      overlay.innerHTML = '<div class="tut-highlight" hidden></div><div class="tut-card">' + genderStepHtml() + '</div>';
+      overlay.querySelector('.tut-card').style.top = '40%';
+      overlay.querySelectorAll('.gender-pick').forEach(function(btn){
+        btn.addEventListener('click', function(){
+          state.gender = btn.getAttribute('data-gender');
+          save();
+          renderHud();
+          tutGenderChosen = true;
+          showTutorialStep();
+        });
+      });
+      return;
+    }
+
+    var step = TUT_STEPS[tutStep];
+    overlay.innerHTML = '<div class="tut-highlight" hidden></div>' +
+      '<div class="tut-card">' +
+        '<span class="tut-step-label">Bước ' + (tutStep + 1) + '/' + TUT_STEPS.length + '</span>' +
+        '<p class="tut-text">' + step.text + '</p>' +
+        '<div class="tut-actions">' +
+          '<button class="tut-skip" type="button">Bỏ qua</button>' +
+          '<button class="m-btn primary tut-next" type="button">' + (tutStep === TUT_STEPS.length - 1 ? 'Bắt đầu chơi' : 'Tiếp theo') + '</button>' +
+        '</div>' +
+      '</div>';
+    overlay.querySelector('.tut-skip').addEventListener('click', endTutorial);
+    overlay.querySelector('.tut-next').addEventListener('click', function(){
+      tutStep++;
+      if(tutStep >= TUT_STEPS.length){ endTutorial(); } else { showTutorialStep(); }
+    });
+
+    var hi = overlay.querySelector('.tut-highlight');
+    var card = overlay.querySelector('.tut-card');
+    var targetEl = document.querySelector(step.target);
+    var appRect = app.getBoundingClientRect();
+    if(targetEl){
+      var r = targetEl.getBoundingClientRect();
+      hi.style.left = (r.left - appRect.left - 6) + 'px';
+      hi.style.top = (r.top - appRect.top - 6) + 'px';
+      hi.style.width = (r.width + 12) + 'px';
+      hi.style.height = (r.height + 12) + 'px';
+      hi.hidden = false;
+      var cardTop = r.bottom - appRect.top + 14;
+      if(cardTop + 150 > app.clientHeight){ cardTop = Math.max(10, r.top - appRect.top - 150); }
+      card.style.top = cardTop + 'px';
+    } else {
+      hi.hidden = true;
+      card.style.top = '40%';
+    }
+  }
+  function endTutorial(){
+    var overlay = document.getElementById('tut-overlay');
+    if(overlay) overlay.remove();
+    state.seenTutorial = true;
+    save();
   }
   /* ---------------- check-in ---------------- */
   function renderCheckin(){
     document.getElementById('checkin-daylabel').textContent = 'Ngày ' + state.day + ' · Bình minh';
-    document.getElementById('checkin-sub').textContent = 'Chạm để mở — phần thưởng ngày ' + state.day;
     var pos = (state.day - 1) % 7;
+    document.getElementById('checkin-sub').textContent = 'Chạm để nhận: ' + rewardText(WEEKLY_REWARDS[pos]);
     var dotsHtml = '';
     for(var i = 0; i < 7; i++){
-      var cls = i < pos ? 'filled' : (i === pos ? 'today' : '');
-      dotsHtml += '<span class="dot ' + cls + '"></span>';
+      var cls = 'week-chip';
+      if(i < pos) cls += ' filled'; else if(i === pos) cls += ' today';
+      if(i === 6) cls += ' special';
+      var iconResource = Object.keys(WEEKLY_REWARDS[i])[0];
+      dotsHtml += '<span class="' + cls + '">' + orderResourceIcon(iconResource) +
+        '<span class="week-chip-day">' + (i + 1) + '</span></span>';
     }
     document.getElementById('streak-dots').innerHTML = dotsHtml;
     document.getElementById('checkin-chest').classList.remove('opening');
+    var btn = document.getElementById('btn-open-chest');
+    btn.disabled = false;
+    btn.textContent = 'Nhận quà';
+    btn.classList.add('pulse');
   }
   function claimCheckin(){
     var chest = document.getElementById('checkin-chest');
+    var btn = document.getElementById('btn-open-chest');
     chest.classList.add('opening');
-    var reward = { gold: 10 + rand(0,5), wood: 1 };
+    btn.classList.remove('pulse');
+    btn.disabled = true;
+    btn.textContent = 'Đã nhận ✓';
+    var pos = (state.day - 1) % 7;
+    var reward = WEEKLY_REWARDS[pos];
     setTimeout(function(){
-      state.gold += reward.gold;
-      state.inv.wood += reward.wood;
+      applyReward(reward);
       state.claimedDay = state.day;
-      addLog('Ngày ' + state.day + ': nhận điểm danh +' + reward.gold + ' vàng, +' + reward.wood + ' gỗ trôi dạt.');
+      addLog('Ngày ' + state.day + ': nhận điểm danh ' + rewardText(reward) + '.');
       save();
-      toast('Nhận được: +' + reward.gold + ' vàng, +' + reward.wood + ' gỗ trôi dạt.');
+      toast('Nhận được: ' + rewardText(reward) + '.');
     }, 250);
     setTimeout(function(){ renderAll(); }, 650);
   }
@@ -634,6 +926,8 @@
 
   /* ---------------- homestead: HUD ---------------- */
   function renderHud(){
+    document.getElementById('hud-avatar').style.backgroundImage =
+      "url('assets/ui/ui-hud-player-profile-" + (state.gender === 'nu' ? 'nu' : 'nam') + "-avatar.jpg')";
     document.getElementById('hud-talent-label').textContent = state.talent === 'warrior' ? '⚔ Chiến Binh' : '🌱 Nông Dân';
     document.getElementById('hud-day-label').textContent = 'Ngày ' + state.day;
     document.getElementById('hud-energy-fill').style.width = Math.round(state.energy / maxEnergy() * 100) + '%';
@@ -642,7 +936,8 @@
     document.getElementById('resource-row').innerHTML =
       '<div class="res-chip"><svg viewBox="0 0 24 24">' + ITEM_ART.crop() + '</svg>' + state.inv.crop + '</div>' +
       '<div class="res-chip"><svg viewBox="0 0 24 24">' + ITEM_ART.wood() + '</svg>' + state.inv.wood + '</div>' +
-      '<div class="res-chip gold-chip"><svg viewBox="0 0 24 24">' + ICONS.coin + '</svg>' + state.gold + '</div>';
+      '<div class="res-chip gold-chip"><img class="res-icon-img" src="assets/ui/ui-hud-resource-chips-coin.png" alt="">' + state.gold + '</div>';
+    renderWeatherBadge();
 
     var pct = Math.min(100, Math.round(state.gold / 50 * 100));
     document.getElementById('goal-fill').style.width = pct + '%';
@@ -803,27 +1098,33 @@
     toast('Bạn đã ngất xỉu và mất ' + lost + ' vàng — được đưa về trại.');
   }
 
-  /* ---------------- backpack / merchant ---------------- */
-  document.getElementById('btn-backpack').addEventListener('click', function(){ openModal(backpackTemplate()); bindBackpack(); });
+  /* ---------------- backpack: sell tab + island market tab ---------------- */
+  var backpackTab = 'sell';
+  document.getElementById('btn-backpack').addEventListener('click', function(){ backpackTab = 'sell'; openModal(backpackTemplate()); });
   function backpackTemplate(){
+    return '<div class="modal">' +
+      '<button class="modal-close" data-close type="button">✕</button>' +
+      '<img class="market-banner" src="assets/ui/ui-screen-island-market-banner.jpg" alt="">' +
+      '<div class="modal-header-row"><h3>Balo</h3><span class="pearl-balance">' + orderResourceIcon('pearl') + state.pearls + '</span></div>' +
+      '<div class="tab-row">' +
+        '<button class="tab-btn' + (backpackTab === 'sell' ? ' active' : '') + '" data-tab="sell" type="button">Bán</button>' +
+        '<button class="tab-btn' + (backpackTab === 'market' ? ' active' : '') + '" data-tab="market" type="button">Chợ</button>' +
+        '<button class="tab-btn' + (backpackTab === 'collection' ? ' active' : '') + '" data-tab="collection" type="button">Bộ sưu tập</button>' +
+      '</div>' +
+      (backpackTab === 'sell' ? sellTabHtml() : backpackTab === 'market' ? marketTabHtml() : collectionTabHtml()) +
+    '</div>';
+  }
+  function sellTabHtml(){
     var chips = ['crop','meat','wood'].map(function(k){
       return '<div class="item-chip">' + ITEM_ART[k]() + '<span class="item-count">×' + state.inv[k] + '</span><span class="muted">' + ITEM_NAMES[k] + '</span></div>';
     }).join('');
     var body = state.merchantAvailable
       ? '<p class="muted">Một thuyền buôn đã ghé Vịnh — bán tài nguyên lấy vàng theo giá: nông sản ' + RATES.crop + 'đ, thịt ' + RATES.meat + 'đ, gỗ ' + RATES.wood + 'đ mỗi phần.</p>'
       : '<p class="muted">Vịnh buôn bán hiện chưa có thuyền ghé — quay lại sau vài ngày.</p>';
-    return '<div class="modal">' +
-      '<button class="modal-close" data-close type="button">✕</button>' +
-      '<h3>Balo &amp; Vịnh buôn bán</h3>' +
-      '<div class="item-row">' + chips + '</div>' +
-      body +
+    return '<div class="item-row">' + chips + '</div>' + body +
       '<div class="modal-actions">' +
         (state.merchantAvailable ? '<button class="m-btn primary" id="btn-sell" type="button">Bán tất cả cho thương nhân</button>' : '') +
-      '</div></div>';
-  }
-  function bindBackpack(){
-    var btn = document.getElementById('btn-sell');
-    if(btn) btn.addEventListener('click', sellAll);
+      '</div>';
   }
   function sellAll(){
     var total = 0, parts = [];
@@ -838,6 +1139,177 @@
     save(); closeModal(); renderAll(); checkGoal();
     toast('Đã bán, nhận +' + total + ' vàng.');
   }
+
+  function marketTabHtml(){
+    var cards = MARKET_ITEMS.map(marketItemCardHtml).join('');
+    return '<p class="muted">Đổi Pearl kiếm được từ Bảng đơn hàng lấy đồ trang trí cho đảo.</p>' +
+      '<div class="market-grid">' + cards + '</div>';
+  }
+  function marketItemCardHtml(item){
+    var owned = state.decorations[item.id] || 0;
+    var maxedOut = !item.repeatable && owned > 0;
+    var canAfford = state.pearls >= item.price;
+    var disabled = maxedOut || !canAfford;
+    var btnLabel = maxedOut ? 'Đã sở hữu' : (canAfford ? 'Mua' : 'Thiếu ' + (item.price - state.pearls));
+    return '<div class="market-card">' +
+      '<span class="market-card-icon">' + orderResourceIcon(item.icon) + '</span>' +
+      '<span class="market-card-name">' + item.name + '</span>' +
+      '<span class="market-card-price">' + orderResourceIcon('pearl') + item.price + '</span>' +
+      (owned > 0 ? '<span class="market-card-owned">Đã có ×' + owned + '</span>' : '') +
+      '<button class="m-btn primary market-buy" data-item="' + item.id + '" type="button"' + (disabled ? ' disabled' : '') + '>' + btnLabel + '</button>' +
+    '</div>';
+  }
+  function buyDecoration(itemId){
+    var item = MARKET_ITEMS.find(function(m){ return m.id === itemId; });
+    if(!item) return;
+    var owned = state.decorations[itemId] || 0;
+    if((!item.repeatable && owned > 0) || state.pearls < item.price) return;
+    state.pearls -= item.price;
+    state.decorations[itemId] = owned + 1;
+    addLog('Bạn đã đổi ' + item.price + ' Pearl lấy ' + item.name + '.');
+    toast('Đã mua ' + item.name + '!');
+    save();
+    openModal(backpackTemplate());
+  }
+
+  // "đã sở hữu" is one shared list regardless of how each piece was acquired (bought or crafted)
+  function collectionTabHtml(){
+    var decorCards = MARKET_ITEMS.map(function(item){
+      var owned = state.decorations[item.id] || 0;
+      return '<div class="market-card' + (owned ? '' : ' unowned') + '">' +
+        '<span class="market-card-icon">' + orderResourceIcon(item.icon) + '</span>' +
+        '<span class="market-card-name">' + item.name + '</span>' +
+        '<span class="market-card-owned">' + (owned ? 'Đã có ×' + owned : 'Chưa có') + '</span>' +
+      '</div>';
+    }).join('');
+    // static preview only — no unlock logic, no state, nothing saved; Chapter 2 content
+    var petCards = PET_PREVIEW.map(function(pet){
+      return '<div class="market-card unowned">' +
+        '<span class="market-card-icon">' + petIcon(pet.icon) + '</span>' +
+        '<span class="market-card-name">' + pet.name + '</span>' +
+        '<span class="pet-lock-row">' + petIcon(artLock) + '<span class="pet-lock-label">' + pet.lockText + '</span></span>' +
+      '</div>';
+    }).join('');
+    return '<p class="muted">Đồ trang trí đã sở hữu — mua ở Chợ hoặc làm ở Xưởng chế tạo. Chưa đặt lên đảo được ở bản này.</p>' +
+      '<h4 class="collection-group-label">Đồ trang trí</h4>' +
+      '<div class="market-grid">' + decorCards + '</div>' +
+      '<img class="market-banner" src="assets/ui/ui-screen-animal-sanctuary-banner.jpg" alt="">' +
+      '<h4 class="collection-group-label">Thú nuôi</h4>' +
+      '<div class="market-grid">' + petCards + '</div>';
+  }
+  function petIcon(fn){ return '<svg viewBox="0 0 24 24" class="res-icon-img">' + fn() + '</svg>'; }
+
+  modalRoot.addEventListener('click', function(e){
+    if(e.target.closest('#btn-sell')){ sellAll(); return; }
+    var tabBtn = e.target.closest('.tab-btn');
+    if(tabBtn){ backpackTab = tabBtn.getAttribute('data-tab'); openModal(backpackTemplate()); return; }
+    var buyBtn = e.target.closest('.market-buy');
+    if(buyBtn && !buyBtn.disabled){ buyDecoration(buyBtn.getAttribute('data-item')); return; }
+    var craftBtn = e.target.closest('.craft-item');
+    if(craftBtn && !craftBtn.disabled) craftDecoration(craftBtn.getAttribute('data-item'));
+  });
+
+  /* ---------------- crafting workshop ---------------- */
+  document.getElementById('btn-craft').addEventListener('click', function(){ openModal(craftingTemplate()); });
+  function craftingTemplate(){
+    var craftable = MARKET_ITEMS.filter(function(m){ return m.craft; });
+    var cards = craftable.map(craftItemCardHtml).join('');
+    return '<div class="modal">' +
+      '<button class="modal-close" data-close type="button">✕</button>' +
+      '<img class="market-banner" src="assets/ui/ui-modal-crafting-workshop-banner.jpg" alt="">' +
+      '<h3>Xưởng chế tạo</h3>' +
+      '<p class="muted">Dùng nguyên liệu thô có sẵn để làm đồ trang trí — không tốn Pearl.</p>' +
+      '<div class="order-list">' + cards + '</div>' +
+    '</div>';
+  }
+  function craftItemCardHtml(item){
+    var owned = state.decorations[item.id] || 0;
+    var maxedOut = !item.repeatable && owned > 0;
+    var has = hasEnoughResources(item.craft);
+    var reqHtml = item.craft.map(function(r){
+      var have = state.inv[r.resource] || 0;
+      return '<span class="order-req-chip' + (have < r.qty ? ' short' : '') + '">' + orderResourceIcon(r.resource) +
+        '<b>' + have + '/' + r.qty + '</b> ' + ORDER_RES_LABEL[r.resource] + '</span>';
+    }).join('');
+    return '<div class="order-card">' +
+      '<div class="craft-card-head"><span class="market-card-icon">' + orderResourceIcon(item.icon) + '</span><b>' + item.name + '</b></div>' +
+      '<div class="order-row">' + reqHtml + '</div>' +
+      (owned > 0 ? '<span class="market-card-owned">Đã có ×' + owned + '</span>' : '') +
+      '<button class="m-btn primary craft-item" data-item="' + item.id + '" type="button"' + (maxedOut || !has ? ' disabled' : '') + '>' +
+        (maxedOut ? 'Đã sở hữu' : 'Chế tạo') +
+      '</button>' +
+      (!maxedOut && !has ? '<span class="order-hint">Cần thêm: ' + missingResourcesText(item.craft) + '</span>' : '') +
+    '</div>';
+  }
+  function craftDecoration(itemId){
+    var item = MARKET_ITEMS.find(function(m){ return m.id === itemId && m.craft; });
+    if(!item) return;
+    var owned = state.decorations[itemId] || 0;
+    if((!item.repeatable && owned > 0) || !hasEnoughResources(item.craft)) return;
+    item.craft.forEach(function(r){ state.inv[r.resource] -= r.qty; });
+    state.decorations[itemId] = owned + 1;
+    addLog('Bạn đã chế tạo ' + item.name + '.');
+    toast('Đã chế tạo ' + item.name + '!');
+    save();
+    renderHud();
+    openModal(craftingTemplate());
+  }
+
+  /* ---------------- order board ---------------- */
+  document.getElementById('goal-bar').addEventListener('click', function(){ openModal(orderBoardTemplate()); });
+  function orderBoardTemplate(){
+    var cards = state.orders.length
+      ? state.orders.map(orderCardHtml).join('')
+      : '<p class="muted">Bảng đơn hàng đang trống — quay lại sau vài ngày.</p>';
+    return '<div class="modal">' +
+      '<button class="modal-close" data-close type="button">✕</button>' +
+      '<img class="market-banner" src="assets/ui/ui-screen-order-board-banner.jpg" alt="">' +
+      '<h3>Bảng đơn hàng đảo</h3>' +
+      '<p class="muted">Giao đúng tài nguyên yêu cầu để đổi lấy vàng.</p>' +
+      '<div class="order-list">' + cards + '</div>' +
+    '</div>';
+  }
+  function orderCardHtml(order){
+    var has = orderHasEnough(order);
+    var reqHtml = order.requires.map(function(r){
+      var short = (state.inv[r.resource] || 0) < r.qty ? ' short' : '';
+      return '<span class="order-req-chip' + short + '">' + orderResourceIcon(r.resource) + '<b>' + r.qty + '</b> ' + ORDER_RES_LABEL[r.resource] + '</span>';
+    }).join('');
+    var rewardHtml = '<span class="order-reward-chip">' + orderResourceIcon(order.reward.resource) + '+' + order.reward.qty + ' ' + ORDER_RES_LABEL[order.reward.resource] + '</span>';
+    return '<div class="order-card" data-order="' + order.id + '">' +
+      '<div class="order-row">' + reqHtml + '<span class="order-arrow">→</span>' + rewardHtml + '</div>' +
+      '<button class="m-btn primary order-deliver" data-order="' + order.id + '" type="button"' + (has ? '' : ' disabled') + '>' +
+        (has ? 'Giao hàng' : 'Chưa đủ hàng') +
+      '</button>' +
+      (has ? '' : '<span class="order-hint">Cần thêm: ' + orderMissingText(order) + '</span>') +
+    '</div>';
+  }
+  function fulfillOrder(orderId){
+    var order = state.orders.find(function(o){ return o.id === orderId; });
+    if(!order || !orderHasEnough(order)) return;
+    order.requires.forEach(function(r){ state.inv[r.resource] -= r.qty; });
+    if(order.reward.resource === 'gold'){ state.gold += order.reward.qty; }
+    else { state.inv[order.reward.resource] = (state.inv[order.reward.resource] || 0) + order.reward.qty; }
+    state.ordersDelivered++;
+    var pearlAwarded = (state.ordersDelivered % ORDERS_PER_PEARL === 0);
+    if(pearlAwarded) state.pearls++;
+    var gainedText = '+' + order.reward.qty + ' ' + ORDER_RES_LABEL[order.reward.resource] + (pearlAwarded ? ', +1 Pearl' : '');
+    addLog('Bạn đã giao một đơn hàng, nhận ' + gainedText + '.');
+    var cardEl = modalRoot.querySelector('.order-card[data-order="' + orderId + '"]');
+    if(cardEl) cardEl.classList.add('order-complete');
+    toast('Đã giao đơn hàng! ' + gainedText + (pearlAwarded ? ' — mốc ' + ORDERS_PER_PEARL + ' đơn!' : '') + '.');
+    setTimeout(function(){
+      var idx = state.orders.findIndex(function(o){ return o.id === orderId; });
+      if(idx >= 0) state.orders.splice(idx, 1);
+      state.nextOrderRefillDay = Math.max(state.nextOrderRefillDay, state.day + ORDER_REFILL_DELAY);
+      save(); renderHud(); checkGoal();
+      openModal(orderBoardTemplate());
+    }, 320);
+  }
+  modalRoot.addEventListener('click', function(e){
+    var btn = e.target.closest('.order-deliver');
+    if(btn && !btn.disabled) fulfillOrder(btn.getAttribute('data-order'));
+  });
 
   /* ---------------- journal / end day ---------------- */
   document.getElementById('btn-journal').addEventListener('click', function(){ openModal(journalTemplate()); bindJournal(); });
@@ -867,6 +1339,7 @@
       addLog('Bạn thấy một cánh buồm lạ ghé vào Vịnh buôn bán...');
     }
     if(Math.random() < 0.35) addLog(FLAVORS[Math.floor(Math.random() * FLAVORS.length)]);
+    refillOrders();
     save(); closeModal(); renderAll(); checkGoal();
   }
   function checkGoal(){
@@ -878,7 +1351,6 @@
   }
 
   /* ---------------- coming-soon placeholders ---------------- */
-  document.getElementById('btn-craft').addEventListener('click', function(){ toast('Chế tạo & Xây dựng sẽ có ở bản cập nhật tiếp theo!'); });
   document.getElementById('btn-friends').addEventListener('click', function(){ toast('Hải âu đưa thư & bạn bè sẽ có ở bản cập nhật tiếp theo!'); });
 
   /* ---------------- reset ---------------- */
@@ -908,18 +1380,16 @@
     showScreen('homestead');
     renderHud();
     renderFarm();
-    if(!state.seenTutorial) openModal(tutorialTemplate());
+    if(!state.seenTutorial && !document.getElementById('tut-overlay')) startTutorial();
   }
-
-  /* delegate tutorial-done binding since modal content is re-injected */
-  modalRoot.addEventListener('click', function(e){
-    if(e.target && e.target.id === 'tut-done'){
-      state.seenTutorial = true; save(); closeModal(); renderAll();
-    }
-  });
 
   /* ---------------- boot ---------------- */
   state = load() || defaultState();
+  if(!Array.isArray(state.orders)) state.orders = seedInitialOrders(state.day); // migrate saves from before the order board
+  if(typeof state.nextOrderRefillDay !== 'number') state.nextOrderRefillDay = state.day;
+  if(typeof state.pearls !== 'number') state.pearls = 0; // migrate saves from before Pearls/the island market
+  if(typeof state.ordersDelivered !== 'number') state.ordersDelivered = 0;
+  if(!state.decorations) state.decorations = {};
   renderAll();
 })();
 
