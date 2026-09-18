@@ -116,8 +116,7 @@
     background:var(--surface);border:2px solid var(--surface-border);border-radius:18px;
     padding:6px 8px;display:flex;align-items:center;gap:8px;color:var(--surface-ink);
   }
-  .hud-avatar{width:34px;height:34px;flex:0 0 auto;border-radius:50%;background:var(--turquoise);border:2px solid var(--cream);display:flex;align-items:center;justify-content:center;}
-  .hud-avatar svg{width:60%;height:60%;color:var(--cream);}
+  .hud-avatar{width:34px;height:34px;flex:0 0 auto;border-radius:50%;background:var(--turquoise) center/cover no-repeat;border:2px solid var(--cream);overflow:hidden;}
   .hud-mid{flex:1;min-width:0;display:flex;flex-direction:column;gap:3px;}
   .hud-mid-row{display:flex;justify-content:space-between;gap:6px;font-size:0.74rem;font-weight:600;}
   .hud-mid-row .talent{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
@@ -132,6 +131,7 @@
   .res-chip{flex:1;display:flex;align-items:center;justify-content:center;gap:5px;background:var(--card);border:1.5px solid var(--driftwood);border-radius:12px;padding:4px 6px;font-size:0.76rem;font-weight:700;color:var(--ink);position:relative;}
   .res-chip svg{width:16px;height:16px;flex:0 0 auto;}
   .res-chip .gold-chip{color:var(--coral-deep);}
+  .res-icon-img{width:18px;height:18px;flex:0 0 auto;object-fit:contain;}
 
   .viewport{
     flex:1;margin:8px 10px 0;border-radius:12px;position:relative;overflow:hidden;
@@ -179,10 +179,10 @@
     background:radial-gradient(circle at 35% 30%,#FFAE6B,var(--coral) 60%,var(--coral-deep) 100%);
     border:3px solid var(--cream);box-shadow:0 6px 14px var(--shadow);z-index:5;
     display:flex;flex-direction:column;align-items:center;justify-content:center;
+    overflow:hidden;position:relative;
   }
-  .dock-cta svg{width:34%;color:#fff;}
-  .dock-cta span{font-family:"Baloo 2";font-size:0.62rem;font-weight:800;color:#fff;margin-top:1px;}
-  .dock-cta small{font-size:0.5rem;color:rgba(255,255,255,.9);}
+  .dock-cta-art{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;border-radius:50%;}
+  .dock-cta small{position:relative;margin-top:auto;margin-bottom:3px;font-size:0.5rem;font-weight:700;color:#fff;background:rgba(74,46,20,.55);padding:1px 6px;border-radius:999px;}
   .dock-cta.locked{opacity:.5;cursor:not-allowed;}
   .dock-cta.shake{animation:shake .3s ease;}
   @keyframes shake{0%,100%{transform:translateX(0)}25%{transform:translateX(-5px)}75%{transform:translateX(5px)}}
@@ -288,6 +288,8 @@
   .m-btn.secondary{background:var(--turquoise);color:#fff;border:2px solid var(--turquoise-deep);}
   .m-btn.ghost{background:var(--paper-deep);color:var(--ink);border:2px solid var(--line);}
 
+  .market-banner{width:100%;height:64px;object-fit:cover;border-radius:12px;margin-top:-2px;}
+
   .item-row{display:flex;gap:8px;flex-wrap:wrap;}
   .item-chip{display:flex;flex-direction:column;align-items:center;gap:2px;background:var(--paper-deep);border-radius:10px;padding:8px 10px;min-width:64px;flex:1;}
   .item-chip svg{width:26px;height:26px;}
@@ -299,9 +301,27 @@
   .journal-day{font-style:normal;font:700 0.7rem "JetBrains Mono",monospace;color:var(--ink-soft);margin-right:4px;}
   .journal-list{display:flex;flex-direction:column;gap:6px;max-height:180px;overflow-y:auto;background:var(--paper-deep);border-radius:10px;padding:10px;}
 
-  .tut-steps{display:flex;flex-direction:column;gap:8px;}
-  .tut-step{display:flex;gap:8px;align-items:flex-start;font-size:0.82rem;line-height:1.4;}
-  .tut-num{flex:0 0 auto;width:20px;height:20px;border-radius:50%;background:var(--coral);color:#fff;font:700 0.7rem "JetBrains Mono",monospace;display:flex;align-items:center;justify-content:center;}
+  /* ---- onboarding coachmarks (first launch only) ---- */
+  #tut-overlay{position:absolute;inset:0;z-index:70;}
+  .tut-highlight{
+    position:absolute;border-radius:14px;border:2.5px solid var(--coral);
+    box-shadow:0 0 0 9999px rgba(20,14,8,.62);
+    transition:left .25s ease, top .25s ease, width .25s ease, height .25s ease;
+    pointer-events:none;
+  }
+  .tut-highlight[hidden]{display:none;}
+  .tut-card{
+    position:absolute;left:14px;right:14px;
+    background:var(--card);border:2px solid var(--driftwood);border-radius:14px;
+    padding:12px 14px;box-shadow:0 10px 24px var(--shadow);
+    display:flex;flex-direction:column;gap:8px;
+    transition:top .25s ease;
+  }
+  .tut-step-label{font:700 0.62rem "JetBrains Mono",monospace;letter-spacing:0.08em;text-transform:uppercase;color:var(--coral-deep);}
+  .tut-text{font-size:0.86rem;line-height:1.5;color:var(--ink);margin:0;}
+  .tut-actions{display:flex;justify-content:space-between;align-items:center;gap:8px;}
+  .tut-skip{font-size:0.78rem;color:var(--ink-soft);text-decoration:underline;background:none;border:none;padding:4px;cursor:pointer;}
+  .tut-next{flex:0 0 auto;min-width:110px;}
 
   #toast{
     position:fixed;left:50%;bottom:18px;transform:translate(-50%,12px);
@@ -377,7 +397,7 @@
   <!-- ============== HOMESTEAD SCREEN ============== -->
   <section class="screen screen-homestead" id="screen-homestead" hidden>
     <div class="hud-topbar">
-      <div class="hud-avatar"><svg viewBox="0 0 24 24" fill="currentColor"><circle cx="12" cy="8" r="4"/><path d="M4 20c1.5-5 5-7 8-7s6.5 2 8 7Z"/></svg></div>
+      <div class="hud-avatar" id="hud-avatar"></div>
       <div class="hud-mid">
         <div class="hud-mid-row"><span class="talent" id="hud-talent-label">—</span><span class="day" id="hud-day-label">Ngày 1</span></div>
         <div class="stamina-bar"><div class="stamina-fill" id="hud-energy-fill" style="width:100%"></div></div>
@@ -409,8 +429,8 @@
       </button>
       <button class="dock-btn" id="btn-craft" title="Chế tạo / Xây dựng" type="button"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M14 4l6 6-3 3-6-6Z" fill="currentColor" stroke="none"/><path d="M12.5 8.5 4 17l3 3 8.5-8.5"/></svg></button>
       <button class="dock-cta" id="cta-sail" title="Ra Khơi" type="button">
-        <svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="1.6"><circle cx="12" cy="12" r="8"/><path d="M12 4v4M12 16v4M4 12h4M16 12h4M6.5 6.5l3 3M14.5 14.5l3 3M17.5 6.5l-3 3M9.5 14.5l-3 3"/><circle cx="12" cy="12" r="2" fill="#fff" stroke="none"/></svg>
-        <span>RA KHƠI</span><small id="cta-cost">−2 sức</small>
+        <img class="dock-cta-art" src="assets/ui/ui-hud-cta-ra-khoi-crop.jpg" alt="Ra Khơi">
+        <small id="cta-cost">−2 sức</small>
       </button>
       <button class="dock-btn" id="btn-journal" title="Sổ tay / Nhật ký" type="button"><svg viewBox="0 0 24 24" fill="currentColor"><rect x="5" y="4" width="14" height="17" rx="2"/><line x1="8" y1="9" x2="16" y2="9" stroke="#8B5A2B" stroke-width="1.4"/><line x1="8" y1="13" x2="16" y2="13" stroke="#8B5A2B" stroke-width="1.4"/></svg></button>
       <button class="dock-btn" id="btn-friends" title="Hải âu đưa thư / Bạn bè" type="button"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M2 14c4-6 8-2 10 0 2-2 6-6 10 0-5 1-7 4-10 7-3-3-5-6-10-7Z"/></svg></button>
@@ -431,8 +451,7 @@
   var ICONS = {
     sword: '<svg viewBox="0 0 24 24" fill="none"><path d="M14 3 21 10l-2 2-7-7 2-2Z" fill="currentColor"/><path d="M12.5 11.5 4 20l-1.5-1.5L11 10l1.5 1.5Z" fill="currentColor"/><path d="M2 22l2.5-2.5" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg>',
     shield: '<svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 2 4 5v6c0 5 3.4 8.7 8 11 4.6-2.3 8-6 8-11V5l-8-3Z"/></svg>',
-    boat: '<svg viewBox="0 0 24 24" fill="none"><path d="M3 15h18l-2.5 5h-13L3 15Z" fill="currentColor"/><path d="M12 3v10M12 5l5 3-5 2" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" fill="none"/></svg>',
-    coin: '<svg viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="9" fill="currentColor"/><circle cx="12" cy="12" r="5.4" fill="none" stroke="var(--card)" stroke-width="1.4"/></svg>'
+    boat: '<svg viewBox="0 0 24 24" fill="none"><path d="M3 15h18l-2.5 5h-13L3 15Z" fill="currentColor"/><path d="M12 3v10M12 5l5 3-5 2" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" fill="none"/></svg>'
   };
 
   function svg(vb, inner){ return '<svg viewBox="' + vb + '" fill="none">' + inner + '</svg>'; }
@@ -491,6 +510,7 @@
   function defaultState(){
     return {
       day: 1, energy: 10, hp: 10, gold: 0, talent: null,
+      gender: 'nam', // TODO: no gender-selection UI yet; defaulting to "nam" art per spec until one exists
       farm: [{stage:0,watered:false},{stage:0,watered:false},{stage:0,watered:false},
              {stage:0,watered:false},{stage:0,watered:false},{stage:0,watered:false}],
       inv: { crop:0, meat:0, wood:0 },
@@ -585,22 +605,70 @@
       ? 'Ngày 1: Bạn vỡ đất tìm giống. Thiên Phú Nông Dân thức tỉnh.'
       : 'Ngày 1: Bạn mài vũ khí tự vệ. Thiên Phú Chiến Binh thức tỉnh.');
     save();
-    state.seenTutorial ? renderAll() : openModal(tutorialTemplate());
+    renderAll();
   }
   document.getElementById('choice-farmer').addEventListener('click', function(){ chooseTalent('farmer'); });
   document.getElementById('choice-warrior').addEventListener('click', function(){ chooseTalent('warrior'); });
 
-  function tutorialTemplate(){
-    return '<div class="modal center">' +
-      '<h3>Bắt đầu từ đâu?</h3>' +
-      '<div class="tut-steps">' +
-        '<div class="tut-step"><span class="tut-num">1</span>Chạm ô đất trống trong ruộng để khai hoang, gieo hạt, rồi tưới nước.</div>' +
-        '<div class="tut-step"><span class="tut-num">2</span>Chờ cây lớn qua vài lượt "Nghỉ ngơi — Qua ngày" (trong Sổ tay), rồi chạm để thu hoạch.</div>' +
-        '<div class="tut-step"><span class="tut-num">3</span>Nhấn <b>RA KHƠI</b> để khám phá hoang dã — kiếm vàng, thịt, gỗ (cẩn thận quái vật!).</div>' +
-        '<div class="tut-step"><span class="tut-num">4</span>Mở <b>Balo</b> để bán tài nguyên cho thương nhân mỗi khi thuyền buôn ghé Vịnh.</div>' +
-      '</div>' +
-      '<div class="modal-actions"><button class="m-btn primary" id="tut-done" type="button">Đã hiểu</button></div>' +
-    '</div>';
+  /* ---------------- onboarding: sequential coachmarks (first launch only) ---------------- */
+  var TUT_STEPS = [
+    { target: '#vp-plots .plot', text: 'Chạm vào một ô đất để khai hoang, gieo hạt rồi tưới nước.' },
+    { target: '#btn-journal', text: 'Mở Sổ tay và chọn "Nghỉ ngơi — Qua ngày" để cây lớn dần.' },
+    { target: '#vp-plots .plot', text: 'Khi ô đất sáng lên (sẵn sàng), chạm lại để thu hoạch.' },
+    { target: '#cta-sail', text: 'Nhấn RA KHƠI để khám phá hoang dã — kiếm vàng, thịt, gỗ!' }
+  ];
+  var tutStep = 0;
+  function startTutorial(){ tutStep = 0; showTutorialStep(); }
+  function showTutorialStep(){
+    var step = TUT_STEPS[tutStep];
+    var overlay = document.getElementById('tut-overlay');
+    if(!overlay){
+      overlay = document.createElement('div');
+      overlay.id = 'tut-overlay';
+      overlay.innerHTML = '<div class="tut-highlight" hidden></div>' +
+        '<div class="tut-card">' +
+          '<span class="tut-step-label"></span>' +
+          '<p class="tut-text"></p>' +
+          '<div class="tut-actions">' +
+            '<button class="tut-skip" type="button">Bỏ qua</button>' +
+            '<button class="m-btn primary tut-next" type="button">Tiếp theo</button>' +
+          '</div>' +
+        '</div>';
+      app.appendChild(overlay);
+      overlay.querySelector('.tut-skip').addEventListener('click', endTutorial);
+      overlay.querySelector('.tut-next').addEventListener('click', function(){
+        tutStep++;
+        if(tutStep >= TUT_STEPS.length){ endTutorial(); } else { showTutorialStep(); }
+      });
+    }
+    overlay.querySelector('.tut-step-label').textContent = 'Bước ' + (tutStep + 1) + '/' + TUT_STEPS.length;
+    overlay.querySelector('.tut-text').textContent = step.text;
+    overlay.querySelector('.tut-next').textContent = (tutStep === TUT_STEPS.length - 1) ? 'Bắt đầu chơi' : 'Tiếp theo';
+
+    var hi = overlay.querySelector('.tut-highlight');
+    var card = overlay.querySelector('.tut-card');
+    var targetEl = document.querySelector(step.target);
+    var appRect = app.getBoundingClientRect();
+    if(targetEl){
+      var r = targetEl.getBoundingClientRect();
+      hi.style.left = (r.left - appRect.left - 6) + 'px';
+      hi.style.top = (r.top - appRect.top - 6) + 'px';
+      hi.style.width = (r.width + 12) + 'px';
+      hi.style.height = (r.height + 12) + 'px';
+      hi.hidden = false;
+      var cardTop = r.bottom - appRect.top + 14;
+      if(cardTop + 150 > app.clientHeight){ cardTop = Math.max(10, r.top - appRect.top - 150); }
+      card.style.top = cardTop + 'px';
+    } else {
+      hi.hidden = true;
+      card.style.top = '40%';
+    }
+  }
+  function endTutorial(){
+    var overlay = document.getElementById('tut-overlay');
+    if(overlay) overlay.remove();
+    state.seenTutorial = true;
+    save();
   }
   /* ---------------- check-in ---------------- */
   function renderCheckin(){
@@ -634,6 +702,8 @@
 
   /* ---------------- homestead: HUD ---------------- */
   function renderHud(){
+    document.getElementById('hud-avatar').style.backgroundImage =
+      "url('assets/ui/ui-hud-player-profile-" + (state.gender === 'nu' ? 'nu' : 'nam') + "-avatar.jpg')";
     document.getElementById('hud-talent-label').textContent = state.talent === 'warrior' ? '⚔ Chiến Binh' : '🌱 Nông Dân';
     document.getElementById('hud-day-label').textContent = 'Ngày ' + state.day;
     document.getElementById('hud-energy-fill').style.width = Math.round(state.energy / maxEnergy() * 100) + '%';
@@ -642,7 +712,7 @@
     document.getElementById('resource-row').innerHTML =
       '<div class="res-chip"><svg viewBox="0 0 24 24">' + ITEM_ART.crop() + '</svg>' + state.inv.crop + '</div>' +
       '<div class="res-chip"><svg viewBox="0 0 24 24">' + ITEM_ART.wood() + '</svg>' + state.inv.wood + '</div>' +
-      '<div class="res-chip gold-chip"><svg viewBox="0 0 24 24">' + ICONS.coin + '</svg>' + state.gold + '</div>';
+      '<div class="res-chip gold-chip"><img class="res-icon-img" src="assets/ui/ui-hud-resource-chips-coin.png" alt="">' + state.gold + '</div>';
 
     var pct = Math.min(100, Math.round(state.gold / 50 * 100));
     document.getElementById('goal-fill').style.width = pct + '%';
@@ -814,6 +884,7 @@
       : '<p class="muted">Vịnh buôn bán hiện chưa có thuyền ghé — quay lại sau vài ngày.</p>';
     return '<div class="modal">' +
       '<button class="modal-close" data-close type="button">✕</button>' +
+      '<img class="market-banner" src="assets/ui/ui-screen-island-market-banner.jpg" alt="">' +
       '<h3>Balo &amp; Vịnh buôn bán</h3>' +
       '<div class="item-row">' + chips + '</div>' +
       body +
@@ -908,15 +979,8 @@
     showScreen('homestead');
     renderHud();
     renderFarm();
-    if(!state.seenTutorial) openModal(tutorialTemplate());
+    if(!state.seenTutorial && !document.getElementById('tut-overlay')) startTutorial();
   }
-
-  /* delegate tutorial-done binding since modal content is re-injected */
-  modalRoot.addEventListener('click', function(e){
-    if(e.target && e.target.id === 'tut-done'){
-      state.seenTutorial = true; save(); closeModal(); renderAll();
-    }
-  });
 
   /* ---------------- boot ---------------- */
   state = load() || defaultState();
