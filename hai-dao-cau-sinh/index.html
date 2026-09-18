@@ -321,6 +321,8 @@
   .market-card-name{font:700 0.76rem "Baloo 2";color:var(--ink);line-height:1.2;min-height:2.1em;}
   .market-card-price{display:flex;align-items:center;gap:3px;font:700 0.74rem "JetBrains Mono",monospace;color:var(--coral-deep);}
   .market-card-owned{font-size:0.66rem;color:var(--turquoise-deep);font-weight:700;}
+  .market-card.unowned{opacity:.5;}
+  .craft-card-head{display:flex;align-items:center;gap:8px;font:700 0.86rem "Baloo 2";color:var(--ink);}
 
   .journal-line{font-size:0.82rem;line-height:1.5;font-style:italic;}
   .journal-line.muted{color:var(--ink-soft);font-style:normal;}
@@ -448,7 +450,7 @@
         <svg viewBox="0 0 24 24" fill="currentColor"><rect x="5" y="8" width="14" height="13" rx="3"/><rect x="8" y="4" width="8" height="6" rx="2"/></svg>
         <span class="badge-dot" id="backpack-badge" hidden></span>
       </button>
-      <button class="dock-btn" id="btn-craft" title="Chế tạo / Xây dựng" type="button"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M14 4l6 6-3 3-6-6Z" fill="currentColor" stroke="none"/><path d="M12.5 8.5 4 17l3 3 8.5-8.5"/></svg></button>
+      <button class="dock-btn" id="btn-craft" title="Chế tạo" type="button"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M14 4l6 6-3 3-6-6Z" fill="currentColor" stroke="none"/><path d="M12.5 8.5 4 17l3 3 8.5-8.5"/></svg></button>
       <button class="dock-cta" id="cta-sail" title="Ra Khơi" type="button">
         <img class="dock-cta-art" src="assets/ui/ui-hud-cta-ra-khoi-crop.jpg" alt="Ra Khơi">
         <small id="cta-cost">−2 sức</small>
@@ -596,15 +598,18 @@
     state.orders.push(instantiateOrder(pool[rand(0, pool.length - 1)]));
     state.nextOrderRefillDay = state.day + ORDER_REFILL_DELAY;
   }
-  function orderHasEnough(order){
-    return order.requires.every(function(r){ return (state.inv[r.resource] || 0) >= r.qty; });
+  // shared by order delivery and crafting — both just check/spend a [{resource,qty}] list
+  function hasEnoughResources(reqs){
+    return reqs.every(function(r){ return (state.inv[r.resource] || 0) >= r.qty; });
   }
-  function orderMissingText(order){
-    return order.requires
+  function missingResourcesText(reqs){
+    return reqs
       .filter(function(r){ return (state.inv[r.resource] || 0) < r.qty; })
       .map(function(r){ return (r.qty - (state.inv[r.resource] || 0)) + ' ' + ORDER_RES_LABEL[r.resource]; })
       .join(', ');
   }
+  function orderHasEnough(order){ return hasEnoughResources(order.requires); }
+  function orderMissingText(order){ return missingResourcesText(order.requires); }
 
   /* ---------------- Pearls + island market decorations ----------------
      Pearls are a separate rare currency, earned only from the order board
@@ -618,12 +623,19 @@
      clears in ~6 days (~1 week, matching the spec), and the 8-Pearl item
      takes ~7 weeks — a genuine long-term goal. */
   var ORDERS_PER_PEARL = 3;
+  /* craft: raw-material recipe for the crafting workshop (below). Only 3 of the 5 items get
+     one — the rest stay Pearls-only, keeping "fast/convenient" (Pearls) and "costs farm effort"
+     (crafting) as genuinely different paths. Quantities are reused straight from ORDER_TEMPLATES
+     above (3 crop = ord_crop_1, 2 wood = ord_wood_1, 2 meat = ord_meat_1) rather than invented. */
   var MARKET_ITEMS = [
     // repeatable: true for items you'd plausibly want several of once placement exists
     // (pots/lanterns/mats lining a path); false for one-off centerpiece pieces.
-    { id:'dec_flowerpot',   name:'Chậu hoa',            price:1, icon:'crop', repeatable:true },
-    { id:'dec_picnicchair', name:'Ghế dã ngoại',        price:2, icon:'wood', repeatable:false },
-    { id:'dec_lantern',     name:'Đèn lồng sân vườn',   price:3, icon:'wood', repeatable:true },
+    { id:'dec_flowerpot',   name:'Chậu hoa',            price:1, icon:'crop', repeatable:true,
+      craft:[{ resource:'crop', qty:3 }] },
+    { id:'dec_picnicchair', name:'Ghế dã ngoại',        price:2, icon:'wood', repeatable:false,
+      craft:[{ resource:'wood', qty:2 }, { resource:'meat', qty:2 }] },
+    { id:'dec_lantern',     name:'Đèn lồng sân vườn',   price:3, icon:'wood', repeatable:true,
+      craft:[{ resource:'wood', qty:2 }, { resource:'crop', qty:1 }] },
     { id:'dec_grassmat',    name:'Thảm cỏ trang trí',   price:5, icon:'crop', repeatable:true },
     { id:'dec_fountain',    name:'Đài phun nước mini',  price:8, icon:'gold', repeatable:false }
   ];
@@ -1024,8 +1036,9 @@
       '<div class="tab-row">' +
         '<button class="tab-btn' + (backpackTab === 'sell' ? ' active' : '') + '" data-tab="sell" type="button">Bán</button>' +
         '<button class="tab-btn' + (backpackTab === 'market' ? ' active' : '') + '" data-tab="market" type="button">Chợ</button>' +
+        '<button class="tab-btn' + (backpackTab === 'collection' ? ' active' : '') + '" data-tab="collection" type="button">Bộ sưu tập</button>' +
       '</div>' +
-      (backpackTab === 'sell' ? sellTabHtml() : marketTabHtml()) +
+      (backpackTab === 'sell' ? sellTabHtml() : backpackTab === 'market' ? marketTabHtml() : collectionTabHtml()) +
     '</div>';
   }
   function sellTabHtml(){
@@ -1085,13 +1098,76 @@
     save();
     openModal(backpackTemplate());
   }
+
+  // "đã sở hữu" is one shared list regardless of how each piece was acquired (bought or crafted)
+  function collectionTabHtml(){
+    var cards = MARKET_ITEMS.map(function(item){
+      var owned = state.decorations[item.id] || 0;
+      return '<div class="market-card' + (owned ? '' : ' unowned') + '">' +
+        '<span class="market-card-icon">' + orderResourceIcon(item.icon) + '</span>' +
+        '<span class="market-card-name">' + item.name + '</span>' +
+        '<span class="market-card-owned">' + (owned ? 'Đã có ×' + owned : 'Chưa có') + '</span>' +
+      '</div>';
+    }).join('');
+    return '<p class="muted">Đồ trang trí đã sở hữu — mua ở Chợ hoặc làm ở Xưởng chế tạo. Chưa đặt lên đảo được ở bản này.</p>' +
+      '<div class="market-grid">' + cards + '</div>';
+  }
+
   modalRoot.addEventListener('click', function(e){
     if(e.target.closest('#btn-sell')){ sellAll(); return; }
     var tabBtn = e.target.closest('.tab-btn');
     if(tabBtn){ backpackTab = tabBtn.getAttribute('data-tab'); openModal(backpackTemplate()); return; }
     var buyBtn = e.target.closest('.market-buy');
-    if(buyBtn && !buyBtn.disabled) buyDecoration(buyBtn.getAttribute('data-item'));
+    if(buyBtn && !buyBtn.disabled){ buyDecoration(buyBtn.getAttribute('data-item')); return; }
+    var craftBtn = e.target.closest('.craft-item');
+    if(craftBtn && !craftBtn.disabled) craftDecoration(craftBtn.getAttribute('data-item'));
   });
+
+  /* ---------------- crafting workshop ---------------- */
+  document.getElementById('btn-craft').addEventListener('click', function(){ openModal(craftingTemplate()); });
+  function craftingTemplate(){
+    var craftable = MARKET_ITEMS.filter(function(m){ return m.craft; });
+    var cards = craftable.map(craftItemCardHtml).join('');
+    return '<div class="modal">' +
+      '<button class="modal-close" data-close type="button">✕</button>' +
+      '<img class="market-banner" src="assets/ui/ui-modal-crafting-workshop-banner.jpg" alt="">' +
+      '<h3>Xưởng chế tạo</h3>' +
+      '<p class="muted">Dùng nguyên liệu thô có sẵn để làm đồ trang trí — không tốn Pearl.</p>' +
+      '<div class="order-list">' + cards + '</div>' +
+    '</div>';
+  }
+  function craftItemCardHtml(item){
+    var owned = state.decorations[item.id] || 0;
+    var maxedOut = !item.repeatable && owned > 0;
+    var has = hasEnoughResources(item.craft);
+    var reqHtml = item.craft.map(function(r){
+      var have = state.inv[r.resource] || 0;
+      return '<span class="order-req-chip' + (have < r.qty ? ' short' : '') + '">' + orderResourceIcon(r.resource) +
+        '<b>' + have + '/' + r.qty + '</b> ' + ORDER_RES_LABEL[r.resource] + '</span>';
+    }).join('');
+    return '<div class="order-card">' +
+      '<div class="craft-card-head"><span class="market-card-icon">' + orderResourceIcon(item.icon) + '</span><b>' + item.name + '</b></div>' +
+      '<div class="order-row">' + reqHtml + '</div>' +
+      (owned > 0 ? '<span class="market-card-owned">Đã có ×' + owned + '</span>' : '') +
+      '<button class="m-btn primary craft-item" data-item="' + item.id + '" type="button"' + (maxedOut || !has ? ' disabled' : '') + '>' +
+        (maxedOut ? 'Đã sở hữu' : 'Chế tạo') +
+      '</button>' +
+      (!maxedOut && !has ? '<span class="order-hint">Cần thêm: ' + missingResourcesText(item.craft) + '</span>' : '') +
+    '</div>';
+  }
+  function craftDecoration(itemId){
+    var item = MARKET_ITEMS.find(function(m){ return m.id === itemId && m.craft; });
+    if(!item) return;
+    var owned = state.decorations[itemId] || 0;
+    if((!item.repeatable && owned > 0) || !hasEnoughResources(item.craft)) return;
+    item.craft.forEach(function(r){ state.inv[r.resource] -= r.qty; });
+    state.decorations[itemId] = owned + 1;
+    addLog('Bạn đã chế tạo ' + item.name + '.');
+    toast('Đã chế tạo ' + item.name + '!');
+    save();
+    renderHud();
+    openModal(craftingTemplate());
+  }
 
   /* ---------------- order board ---------------- */
   document.getElementById('goal-bar').addEventListener('click', function(){ openModal(orderBoardTemplate()); });
@@ -1189,7 +1265,6 @@
   }
 
   /* ---------------- coming-soon placeholders ---------------- */
-  document.getElementById('btn-craft').addEventListener('click', function(){ toast('Chế tạo & Xây dựng sẽ có ở bản cập nhật tiếp theo!'); });
   document.getElementById('btn-friends').addEventListener('click', function(){ toast('Hải âu đưa thư & bạn bè sẽ có ở bản cập nhật tiếp theo!'); });
 
   /* ---------------- reset ---------------- */
